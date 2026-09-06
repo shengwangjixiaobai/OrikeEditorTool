@@ -1,0 +1,5 @@
+# 屏蔽所有 .meta 文件
+*.meta
+
+# 屏蔽 Test 文件夹
+Test/
