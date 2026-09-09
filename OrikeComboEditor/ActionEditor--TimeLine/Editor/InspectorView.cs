@@ -1,9 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 using ObjectField =
 UnityEditor.UIElements.ObjectField;
+
+using ColorField =
+UnityEditor.UIElements.ColorField;
 
 public class InspectorView : VisualElement
 {
@@ -12,6 +18,7 @@ public class InspectorView : VisualElement
     private Label _titleLabel;
 
     private VisualElement _content;
+
 
     private TextField _nameField;
 
@@ -72,6 +79,12 @@ public class InspectorView : VisualElement
 
             _controller.OnClipDataChanged +=
                 OnClipDataChanged;
+
+            _controller.OnPointEventSelectionChanged +=
+                OnPointEventSelectionChanged;
+
+            _controller.OnPointEventChanged +=
+                OnPointEventChanged;
         }
 
 
@@ -187,6 +200,24 @@ public class InspectorView : VisualElement
         _content.Clear();
 
 
+        // =====================================================
+        // Point Event 选中时优先显示点事件面板
+        // =====================================================
+
+        if (_controller != null &&
+            _controller.SelectedPointEvent !=
+                null)
+        {
+            CreatePointEventFields(
+                _controller.SelectedPointEvent);
+
+            _updating =
+                false;
+
+            return;
+        }
+
+
         BaseClipData clip =
             _controller != null
                 ? _controller.SelectedClip
@@ -197,7 +228,7 @@ public class InspectorView : VisualElement
         {
             Label emptyLabel =
                 new Label(
-                    "No Clip Selected");
+                    "Nothing Selected");
 
             emptyLabel.style.fontSize =
                 11;
@@ -259,6 +290,16 @@ public class InspectorView : VisualElement
         {
             CreateHitboxFields(
                 hitboxClipData);
+        }
+
+
+        // State Event
+        if (clip
+            is StateEventData
+                stateEventClipData)
+        {
+            CreateStateEventFields(
+                stateEventClipData);
         }
 
 
@@ -568,6 +609,27 @@ public class InspectorView : VisualElement
             }
 
             return "Hitbox";
+        }
+
+
+        // =====================================================
+        // State Event
+        // =====================================================
+
+        if (clip
+            is StateEventData
+                stateEventClipData)
+        {
+            if (stateEventClipData.StateEvent
+                != null)
+            {
+                return ObjectNames.NicifyVariableName(
+                    stateEventClipData.StateEvent
+                        .GetType()
+                        .Name);
+            }
+
+            return "State Event";
         }
 
 
@@ -905,14 +967,6 @@ public class InspectorView : VisualElement
             return;
         }
 
-
-        // =====================================================
-        // ??????????? Name
-        // ????????? Inspector
-        //
-        // ??? TextField ????????ж??????
-        // =====================================================
-
         if (IsAnyInputFieldFocused())
         {
             return;
@@ -949,8 +1003,11 @@ public class InspectorView : VisualElement
                 .focusController
                 .focusedElement;
 
-        // focusedElement 类型是 Focusable
-        // parent 属性只有 VisualElement 才有
+        if (focused == null)
+        {
+            return false;
+        }
+
         VisualElement e =
             focused as VisualElement;
 
@@ -962,9 +1019,8 @@ public class InspectorView : VisualElement
         while (e != null &&
                e != _content)
         {
-            if (e is TextField ||
-                e is Vector3Field ||
-                e is ObjectField)
+            if (IsInputField(
+                    e))
             {
                 return true;
             }
@@ -975,6 +1031,811 @@ public class InspectorView : VisualElement
         return false;
     }
 
+
+    // =========================================================
+    // Is Input Field
+    //
+    // 判断元素是否是任意类型的输入字段
+    // TextField / FloatField / IntegerField / Toggle /
+    // PopupField / EnumField / ObjectField / Vector3Field /
+    // ColorField 等都继承自 BaseField<T>
+    // =========================================================
+
+    private static bool IsInputField(
+        VisualElement element)
+    {
+        Type type =
+            element.GetType();
+
+        while (type != null &&
+               type != typeof(
+                   VisualElement))
+        {
+            if (type.IsGenericType &&
+                type.GetGenericTypeDefinition() ==
+                    typeof(
+                        BaseField<>))
+            {
+                return true;
+            }
+
+            type =
+                type.BaseType;
+        }
+
+        return false;
+    }
+
+
+
+
+
+    // =========================================================
+    // State Event Fields
+    // =========================================================
+
+    private void CreateStateEventFields(
+        StateEventData clip)
+    {
+        if (clip == null)
+        {
+            return;
+        }
+
+
+        EventType[] eventTypes =
+            EventFactory.GetStateEventTypes();
+
+        EnsureStateEventInstance(
+            clip,
+            eventTypes);
+
+
+        // =====================================================
+        // Event Type 下拉
+        // =====================================================
+
+        PopupField<EventType> typePopup =
+            new PopupField<EventType>(
+                "Event Type",
+                new List<EventType>(
+                    eventTypes),
+                clip.EventType);
+
+        typePopup.formatListItemCallback =
+            FormatEventType;
+
+        typePopup.formatSelectedValueCallback =
+            FormatEventType;
+
+        typePopup.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                _controller.SetStateEventType(
+                    clip,
+                    evt.newValue);
+
+                // 类型切换后重建字段（延迟一帧，避免下拉关闭过程中重建）
+                schedule
+                    .Execute(
+                        Refresh)
+                    .ExecuteLater(
+                        1);
+            });
+
+        _content.Add(
+            typePopup);
+
+
+        // =====================================================
+        // 事件参数字段（反射绘制）
+        // =====================================================
+
+        if (clip.StateEvent != null)
+        {
+            CreateEventInstanceFields(
+                clip.StateEvent,
+                () =>
+                {
+                    _controller.SetStateEventDirty(
+                        clip);
+                });
+        }
+    }
+
+
+    // =========================================================
+    // Point Event Fields
+    // =========================================================
+
+    private void CreatePointEventFields(
+        PointEventData pointEvent)
+    {
+        if (pointEvent == null)
+        {
+            return;
+        }
+
+
+        // =====================================================
+        // Title
+        // =====================================================
+
+        Label titleLabel =
+            new Label(
+                "Point Event");
+
+        titleLabel.style.marginBottom =
+            8;
+
+        titleLabel.style.unityFontStyleAndWeight =
+            FontStyle.Bold;
+
+        _content.Add(
+            titleLabel);
+
+
+        // =====================================================
+        // Name
+        // =====================================================
+
+        TextField nameField =
+            new TextField(
+                "Name");
+
+        nameField.value =
+            pointEvent.Name ?? string.Empty;
+
+        nameField.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                _controller.SetPointEventName(
+                    pointEvent,
+                    evt.newValue ?? string.Empty);
+            });
+
+        _content.Add(
+            nameField);
+
+
+        // =====================================================
+        // Time
+        // =====================================================
+
+        FloatField timeField =
+            new FloatField(
+                "Time");
+
+        timeField.value =
+            pointEvent.Time;
+
+        timeField.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                _controller.SetPointEventTime(
+                    pointEvent,
+                    evt.newValue);
+            });
+
+        _content.Add(
+            timeField);
+
+
+        EventType[] eventTypes =
+            EventFactory.GetPointEventTypes();
+
+        EnsurePointEventInstance(
+            pointEvent,
+            eventTypes);
+
+
+        // =====================================================
+        // Event Type 下拉
+        // =====================================================
+
+        PopupField<EventType> typePopup =
+            new PopupField<EventType>(
+                "Event Type",
+                new List<EventType>(
+                    eventTypes),
+                pointEvent.EventType);
+
+        typePopup.formatListItemCallback =
+            FormatEventType;
+
+        typePopup.formatSelectedValueCallback =
+            FormatEventType;
+
+        typePopup.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                _controller.SetPointEventType(
+                    pointEvent,
+                    evt.newValue);
+
+                schedule
+                    .Execute(
+                        Refresh)
+                    .ExecuteLater(
+                        1);
+            });
+
+        _content.Add(
+            typePopup);
+
+
+        // =====================================================
+        // 事件参数字段（反射绘制）
+        // =====================================================
+
+        if (pointEvent.PointEvent != null)
+        {
+            CreateEventInstanceFields(
+                pointEvent.PointEvent,
+                () =>
+                {
+                    _controller.SetPointEventDirty(
+                        pointEvent);
+                });
+        }
+    }
+
+
+    // =========================================================
+    // Event Instance Fields
+    //
+    // 反射遍历事件实例的序列化字段
+    // 根据字段类型创建对应的 UI 控件
+    // =========================================================
+
+    private void CreateEventInstanceFields(
+        object eventInstance,
+        Action onDirty)
+    {
+        if (eventInstance == null)
+        {
+            return;
+        }
+
+        Type type =
+            eventInstance.GetType();
+
+        FieldInfo[] fields =
+            type.GetFields(
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                BindingFlags.NonPublic);
+
+        foreach (
+            FieldInfo field
+            in fields)
+        {
+            if (!IsSerializedEventField(
+                    field))
+            {
+                continue;
+            }
+
+            CreateFieldForEvent(
+                eventInstance,
+                field,
+                onDirty);
+        }
+    }
+
+
+    // 字段是否需要序列化绘制
+    private static bool IsSerializedEventField(
+        FieldInfo field)
+    {
+        if (field.IsStatic ||
+            field.IsLiteral)
+        {
+            return false;
+        }
+
+        bool serialized =
+            field.IsPublic ||
+            Attribute.IsDefined(
+                field,
+                typeof(
+                    SerializeField));
+
+        if (!serialized)
+        {
+            return false;
+        }
+
+        if (Attribute.IsDefined(
+                field,
+                typeof(
+                    NonSerializedAttribute)) ||
+            Attribute.IsDefined(
+                field,
+                typeof(
+                    HideInInspector)))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    private void CreateFieldForEvent(
+        object eventInstance,
+        FieldInfo field,
+        Action onDirty)
+    {
+        string label =
+            ObjectNames.NicifyVariableName(
+                field.Name);
+
+        Type fieldType =
+            field.FieldType;
+
+
+        // =====================================================
+        // int
+        // =====================================================
+
+        if (fieldType == typeof(int))
+        {
+            IntegerField element =
+                new IntegerField(
+                    label);
+
+            element.value =
+                (int)field.GetValue(
+                    eventInstance);
+
+            element.RegisterValueChangedCallback(
+                evt =>
+                {
+                    if (_updating)
+                    {
+                        return;
+                    }
+
+                    field.SetValue(
+                        eventInstance,
+                        evt.newValue);
+
+                    onDirty?.Invoke();
+                });
+
+            _content.Add(
+                element);
+
+            return;
+        }
+
+
+        // =====================================================
+        // float
+        // =====================================================
+
+        if (fieldType == typeof(float))
+        {
+            FloatField element =
+                new FloatField(
+                    label);
+
+            element.value =
+                (float)field.GetValue(
+                    eventInstance);
+
+            element.RegisterValueChangedCallback(
+                evt =>
+                {
+                    if (_updating)
+                    {
+                        return;
+                    }
+
+                    field.SetValue(
+                        eventInstance,
+                        evt.newValue);
+
+                    onDirty?.Invoke();
+                });
+
+            _content.Add(
+                element);
+
+            return;
+        }
+
+
+        // =====================================================
+        // bool
+        // =====================================================
+
+        if (fieldType == typeof(bool))
+        {
+            Toggle element =
+                new Toggle(
+                    label);
+
+            element.value =
+                (bool)field.GetValue(
+                    eventInstance);
+
+            element.RegisterValueChangedCallback(
+                evt =>
+                {
+                    if (_updating)
+                    {
+                        return;
+                    }
+
+                    field.SetValue(
+                        eventInstance,
+                        evt.newValue);
+
+                    onDirty?.Invoke();
+                });
+
+            _content.Add(
+                element);
+
+            return;
+        }
+
+
+        // =====================================================
+        // string
+        // =====================================================
+
+        if (fieldType == typeof(string))
+        {
+            TextField element =
+                new TextField(
+                    label);
+
+            element.value =
+                field.GetValue(
+                    eventInstance)
+                    as string
+                    ?? string.Empty;
+
+            element.RegisterValueChangedCallback(
+                evt =>
+                {
+                    if (_updating)
+                    {
+                        return;
+                    }
+
+                    field.SetValue(
+                        eventInstance,
+                        evt.newValue);
+
+                    onDirty?.Invoke();
+                });
+
+            _content.Add(
+                element);
+
+            return;
+        }
+
+
+        // =====================================================
+        // Vector2
+        // =====================================================
+
+        if (fieldType == typeof(Vector2))
+        {
+            Vector2Field element =
+                new Vector2Field(
+                    label);
+
+            element.value =
+                (Vector2)field.GetValue(
+                    eventInstance);
+
+            element.RegisterValueChangedCallback(
+                evt =>
+                {
+                    if (_updating)
+                    {
+                        return;
+                    }
+
+                    field.SetValue(
+                        eventInstance,
+                        evt.newValue);
+
+                    onDirty?.Invoke();
+                });
+
+            _content.Add(
+                element);
+
+            return;
+        }
+
+
+        // =====================================================
+        // Vector3
+        // =====================================================
+
+        if (fieldType == typeof(Vector3))
+        {
+            Vector3Field element =
+                new Vector3Field(
+                    label);
+
+            element.value =
+                (Vector3)field.GetValue(
+                    eventInstance);
+
+            element.RegisterValueChangedCallback(
+                evt =>
+                {
+                    if (_updating)
+                    {
+                        return;
+                    }
+
+                    field.SetValue(
+                        eventInstance,
+                        evt.newValue);
+
+                    onDirty?.Invoke();
+                });
+
+            _content.Add(
+                element);
+
+            return;
+        }
+
+
+        // =====================================================
+        // Color
+        // =====================================================
+
+        if (fieldType == typeof(Color))
+        {
+            ColorField element =
+                new ColorField(
+                    label);
+
+            element.value =
+                (Color)field.GetValue(
+                    eventInstance);
+
+            element.RegisterValueChangedCallback(
+                evt =>
+                {
+                    if (_updating)
+                    {
+                        return;
+                    }
+
+                    field.SetValue(
+                        eventInstance,
+                        evt.newValue);
+
+                    onDirty?.Invoke();
+                });
+
+            _content.Add(
+                element);
+
+            return;
+        }
+
+
+        // =====================================================
+        // Enum
+        // =====================================================
+
+        if (fieldType.IsEnum)
+        {
+            EnumField element =
+                new EnumField(
+                    label,
+                    (Enum)field.GetValue(
+                        eventInstance));
+
+            element.RegisterValueChangedCallback(
+                evt =>
+                {
+                    if (_updating)
+                    {
+                        return;
+                    }
+
+                    field.SetValue(
+                        eventInstance,
+                        evt.newValue);
+
+                    onDirty?.Invoke();
+                });
+
+            _content.Add(
+                element);
+
+            return;
+        }
+
+
+        // =====================================================
+        // UnityEngine.Object
+        // =====================================================
+
+        if (typeof(
+                UnityEngine.Object)
+                .IsAssignableFrom(
+                    fieldType))
+        {
+            ObjectField element =
+                new ObjectField(
+                    label);
+
+            element.objectType =
+                fieldType;
+
+            element.allowSceneObjects =
+                false;
+
+            element.value =
+                field.GetValue(
+                    eventInstance)
+                    as UnityEngine.Object;
+
+            element.RegisterValueChangedCallback(
+                evt =>
+                {
+                    if (_updating)
+                    {
+                        return;
+                    }
+
+                    field.SetValue(
+                        eventInstance,
+                        evt.newValue);
+
+                    onDirty?.Invoke();
+                });
+
+            _content.Add(
+                element);
+
+            return;
+        }
+
+
+        // =====================================================
+        // 不支持的类型
+        // =====================================================
+
+        Label unsupported =
+            new Label(
+                label +
+                ": <" +
+                fieldType.Name +
+                ">");
+
+        unsupported.SetEnabled(
+            false);
+
+        _content.Add(
+            unsupported);
+    }
+
+
+    // =========================================================
+    // Ensure Event Instance
+    // =========================================================
+
+    private static void EnsureStateEventInstance(
+        StateEventData clip,
+        EventType[] eventTypes)
+    {
+        if (clip.StateEvent != null ||
+            eventTypes.Length == 0)
+        {
+            return;
+        }
+
+        if (Array.IndexOf(
+                eventTypes,
+                clip.EventType) < 0)
+        {
+            clip.EventType =
+                eventTypes[0];
+        }
+
+        clip.CreateEventInstance();
+    }
+
+
+    private static void EnsurePointEventInstance(
+        PointEventData pointEvent,
+        EventType[] eventTypes)
+    {
+        if (pointEvent.PointEvent != null ||
+            eventTypes.Length == 0)
+        {
+            return;
+        }
+
+        if (Array.IndexOf(
+                eventTypes,
+                pointEvent.EventType) < 0)
+        {
+            pointEvent.EventType =
+                eventTypes[0];
+        }
+
+        pointEvent.CreateEventInstance();
+    }
+
+
+    private static string FormatEventType(
+        EventType eventType)
+    {
+        return ObjectNames.NicifyVariableName(
+            eventType.ToString());
+    }
+
+
+    // =========================================================
+    // Point Event Selection
+    // =========================================================
+
+    private void OnPointEventSelectionChanged(
+        PointEventData pointEvent)
+    {
+        Refresh();
+    }
+
+
+    private void OnPointEventChanged(
+        PointEventData pointEvent)
+    {
+        if (_controller == null)
+        {
+            return;
+        }
+
+        if (_controller.SelectedPointEvent !=
+            pointEvent)
+        {
+            return;
+        }
+
+        if (IsAnyInputFieldFocused())
+        {
+            return;
+        }
+
+        Refresh();
+    }
 
     // =========================================================
     // Clip Type
@@ -1020,6 +1881,14 @@ public class InspectorView : VisualElement
         {
             return
                 "Hitbox Clip";
+        }
+
+
+        if (clip
+            is StateEventData)
+        {
+            return
+                "State Event Clip";
         }
 
 

@@ -10,6 +10,24 @@ public class TrackView
     public const float TrackHeight =
         36f;
 
+    // Point Event 标记尺寸（长方形 + 三角形）
+    public const string PointEventMarkerClassName =
+        "point-event-marker";
+
+    private const float MarkerWidth =
+        9f;
+
+    private const float MarkerHeight =
+        14f;
+
+    // 三角形尖端相对 marker 左边缘的 x 偏移
+    private const float MarkerTipOffsetX =
+        4f;
+
+    // 标记底部距轨道底边的间距
+    private const float MarkerBottomMargin =
+        3f;
+
 
     private readonly TrackData _trackData;
 
@@ -37,6 +55,27 @@ public class TrackView
     private readonly List<ClipView>
         _clipViews =
             new List<ClipView>();
+
+
+    // =========================================================
+    // Point Event Markers
+    // =========================================================
+
+    private readonly List<VisualElement>
+        _pointEventMarkers =
+            new List<VisualElement>();
+
+
+    // =========================================================
+    // Point Event 拖拽状态
+    // =========================================================
+
+    private PointEventData _draggingPointEvent;
+
+    private int _draggingPointerId =
+        -1;
+
+    private float _lastDragPointerX;
 
 
     // =========================================================
@@ -127,6 +166,8 @@ public class TrackView
 
         BuildClipViews();
 
+        BuildPointEventMarkers();
+
         RegisterTrackContextMenu();
 
 
@@ -134,6 +175,12 @@ public class TrackView
         {
             _controller.OnTrackDataChanged +=
                 OnTrackDataChanged;
+
+            _controller.OnPointEventSelectionChanged +=
+                OnPointEventSelectionChanged;
+
+            _controller.OnPointEventChanged +=
+                OnPointEventChanged;
         }
     }
 
@@ -766,6 +813,17 @@ public class TrackView
         }
 
 
+        if (_trackData != null &&
+            _trackData.ClipType ==
+            ClipType.StateEvent)
+        {
+            return new Color(
+                1f,
+                0.85f,
+                0.25f);
+        }
+
+
         return new Color(
             0.7f,
             0.7f,
@@ -851,6 +909,477 @@ public class TrackView
 
 
         LayoutClips();
+    }
+
+
+    // =========================================================
+    // Build Point Event Markers
+    //
+    // 点事件显示为菱形标记，不是 Clip 片段
+    // =========================================================
+
+    private void BuildPointEventMarkers()
+    {
+        // 清除旧标记
+        foreach (
+            VisualElement marker
+            in _pointEventMarkers)
+        {
+            _rightElement.Remove(
+                marker);
+        }
+
+        _pointEventMarkers.Clear();
+
+
+        if (_trackData == null ||
+            _trackData.PointEvents == null)
+        {
+            return;
+        }
+
+
+        foreach (
+            PointEventData pointEvent
+            in _trackData.PointEvents)
+        {
+            if (pointEvent == null)
+            {
+                continue;
+            }
+
+
+            VisualElement marker =
+                CreatePointEventMarker(
+                    pointEvent);
+
+
+            _pointEventMarkers.Add(
+                marker);
+
+
+            _rightElement.Add(
+                marker);
+        }
+
+
+        LayoutPointEventMarkers();
+    }
+
+
+    private VisualElement
+        CreatePointEventMarker(
+            PointEventData pointEvent)
+    {
+        VisualElement marker =
+            new VisualElement();
+
+        marker.AddToClassList(
+            PointEventMarkerClassName);
+
+
+        // 标记形状：长方形 + 三角形（书签/小旗子样式）
+        // 三角形尖端对齐事件时间点
+        marker.style.width =
+            MarkerWidth;
+
+        marker.style.height =
+            MarkerHeight;
+
+        marker.style.position =
+            Position.Absolute;
+
+        marker.tooltip =
+            string.IsNullOrEmpty(
+                pointEvent.Name)
+                ? pointEvent.EventType
+                    .ToString()
+                : pointEvent.Name;
+
+
+        // 用 generateVisualContent 绘制形状
+        marker.generateVisualContent +=
+            ctx =>
+            {
+                DrawPointEventMarker(
+                    ctx,
+                    pointEvent);
+            };
+
+
+        // 左键：选中 + 拖拽移动
+        // 右键：选中 + 菜单
+        marker.RegisterCallback<
+            PointerDownEvent>(
+            evt =>
+            {
+                if (evt.button == 0)
+                {
+                    _controller
+                        .SelectPointEvent(
+                            pointEvent);
+
+                    _draggingPointEvent =
+                        pointEvent;
+
+                    _draggingPointerId =
+                        evt.pointerId;
+
+                    _lastDragPointerX =
+                        evt.position.x;
+
+                    marker.CapturePointer(
+                        evt.pointerId);
+
+                    evt.StopPropagation();
+                }
+                else if (evt.button == 1)
+                {
+                    _controller
+                        .SelectPointEvent(
+                            pointEvent);
+
+                    ShowPointEventContextMenu(
+                        pointEvent);
+
+                    evt.StopPropagation();
+                }
+            });
+
+
+        // 拖拽移动：按像素增量换算时间
+        marker.RegisterCallback<
+            PointerMoveEvent>(
+            evt =>
+            {
+                if (_draggingPointEvent !=
+                        pointEvent ||
+                    _draggingPointerId !=
+                        evt.pointerId)
+                {
+                    return;
+                }
+
+                if (!marker.HasPointerCapture(
+                        evt.pointerId))
+                {
+                    return;
+                }
+
+
+                float pixelsPerSecond =
+                    _fps *
+                    _frameWidth;
+
+                if (pixelsPerSecond <=
+                    0f)
+                {
+                    return;
+                }
+
+
+                float deltaPixel =
+                    evt.position.x -
+                    _lastDragPointerX;
+
+                _lastDragPointerX =
+                    evt.position.x;
+
+                float newTime =
+                    pointEvent.Time +
+                    deltaPixel /
+                        pixelsPerSecond;
+
+                _controller.SetPointEventTime(
+                    pointEvent,
+                    newTime);
+
+                evt.StopPropagation();
+            });
+
+
+        // 松开：结束拖拽
+        marker.RegisterCallback<
+            PointerUpEvent>(
+            evt =>
+            {
+                if (_draggingPointEvent !=
+                        pointEvent ||
+                    _draggingPointerId !=
+                        evt.pointerId)
+                {
+                    return;
+                }
+
+                if (marker.HasPointerCapture(
+                        evt.pointerId))
+                {
+                    marker.ReleasePointer(
+                        evt.pointerId);
+                }
+
+                _draggingPointEvent =
+                    null;
+
+                _draggingPointerId =
+                    -1;
+
+                evt.StopPropagation();
+            });
+
+
+        return marker;
+    }
+
+
+    // =========================================================
+    // Draw Point Event Marker
+    //
+    // 形状：上方长方形 + 下方三角形
+    // 三角形尖端（底部中心）对齐事件时间点
+    // 先画外轮廓（边框色），再画内填充（小一圈）
+    // =========================================================
+
+    private void DrawPointEventMarker(
+        MeshGenerationContext ctx,
+        PointEventData pointEvent)
+    {
+        bool selected =
+            _controller != null &&
+            _controller.SelectedPointEvent ==
+                pointEvent;
+
+        // 填充始终白色；未选中灰色描边，选中黄色描边
+        Color borderColor =
+            selected
+                ? new Color(
+                    1f,
+                    0.85f,
+                    0.1f)
+                : new Color(
+                    0.45f,
+                    0.45f,
+                    0.45f);
+
+        Color fillColor =
+            new Color(
+                1f,
+                1f,
+                1f);
+
+
+        Vertex[] vertices =
+            new Vertex[10];
+
+
+        // 外轮廓（边框色）扇形
+        SetMarkerVertex(
+            ref vertices[0],
+            0f,
+            0f,
+            borderColor);
+
+        SetMarkerVertex(
+            ref vertices[1],
+            8f,
+            0f,
+            borderColor);
+
+        SetMarkerVertex(
+            ref vertices[2],
+            8f,
+            7f,
+            borderColor);
+
+        SetMarkerVertex(
+            ref vertices[3],
+            4f,
+            13f,
+            borderColor);
+
+        SetMarkerVertex(
+            ref vertices[4],
+            0f,
+            7f,
+            borderColor);
+
+
+        // 内部填充（小一圈）扇形
+        SetMarkerVertex(
+            ref vertices[5],
+            1f,
+            1f,
+            fillColor);
+
+        SetMarkerVertex(
+            ref vertices[6],
+            7f,
+            1f,
+            fillColor);
+
+        SetMarkerVertex(
+            ref vertices[7],
+            7f,
+            7f,
+            fillColor);
+
+        SetMarkerVertex(
+            ref vertices[8],
+            4f,
+            12f,
+            fillColor);
+
+        SetMarkerVertex(
+            ref vertices[9],
+            1f,
+            7f,
+            fillColor);
+
+
+        MeshWriteData mesh =
+            ctx.Allocate(
+                10,
+                18);
+
+        mesh.SetAllVertices(
+            vertices);
+
+        mesh.SetAllIndices(
+            new ushort[]
+            {
+                0, 1, 2,
+                0, 2, 3,
+                0, 3, 4,
+
+                5, 6, 7,
+                5, 7, 8,
+                5, 8, 9,
+            });
+    }
+
+
+    private static void SetMarkerVertex(
+        ref Vertex vertex,
+        float x,
+        float y,
+        Color color)
+    {
+        vertex.position =
+            new Vector3(
+                x,
+                y,
+                0f);
+
+        vertex.tint =
+            color;
+
+        vertex.uv =
+            Vector2.zero;
+    }
+
+
+    private void LayoutPointEventMarkers()
+    {
+        if (_trackData == null ||
+            _trackData.PointEvents == null)
+        {
+            return;
+        }
+
+
+        float pixelsPerSecond =
+            _fps *
+            _frameWidth;
+
+
+        for (int i = 0;
+             i < _trackData.PointEvents.Count;
+             i++)
+        {
+            if (i >= _pointEventMarkers.Count)
+            {
+                break;
+            }
+
+
+            PointEventData pointEvent =
+                _trackData.PointEvents[i];
+
+            VisualElement marker =
+                _pointEventMarkers[i];
+
+
+            float x =
+                pointEvent.Time *
+                pixelsPerSecond;
+
+
+            // 三角形尖端（marker 局部 x = 4）对齐时间点
+            marker.style.left =
+                x - MarkerTipOffsetX;
+
+            // 位置靠近轨道底边
+            marker.style.top =
+                TrackHeight -
+                MarkerHeight -
+                MarkerBottomMargin;
+        }
+    }
+
+
+    // =========================================================
+    // Point Event 选中变化：刷新标记高亮
+    // =========================================================
+
+    private void OnPointEventSelectionChanged(
+        PointEventData pointEvent)
+    {
+        foreach (
+            VisualElement marker
+            in _pointEventMarkers)
+        {
+            marker.MarkDirtyRepaint();
+        }
+    }
+
+
+    // =========================================================
+    // Point Event 数据变化：重新布局 + 刷新高亮
+    // =========================================================
+
+    private void OnPointEventChanged(
+        PointEventData pointEvent)
+    {
+        LayoutPointEventMarkers();
+
+        foreach (
+            VisualElement marker
+            in _pointEventMarkers)
+        {
+            marker.MarkDirtyRepaint();
+        }
+    }
+
+    private void ShowPointEventContextMenu(
+        PointEventData pointEvent)
+    {
+        GenericMenu menu =
+            new GenericMenu();
+
+
+        menu.AddItem(
+            new GUIContent(
+                "Delete"),
+            false,
+            () =>
+            {
+                _controller.DeletePointEvent(
+                    _trackData,
+                    pointEvent);
+            });
+
+
+        menu.ShowAsContext();
     }
 
 
@@ -1040,6 +1569,62 @@ public class TrackView
                 () =>
                 {
                     OpenHitboxPicker(
+                        time);
+                });
+        }
+
+
+        // -----------------------------------------------------
+        // State Event Track
+        // -----------------------------------------------------
+
+        else if (_trackData.ClipType ==
+                 ClipType.StateEvent)
+        {
+            EventType[] stateEventTypes =
+                EventFactory.GetStateEventTypes();
+
+            foreach (
+                EventType seType
+                in stateEventTypes)
+            {
+                menu.AddItem(
+                    new GUIContent(
+                        "Add/State Event Clip/" +
+                        seType),
+                    false,
+                    () =>
+                    {
+                        _controller.AddStateEventClip(
+                            _trackData,
+                            seType,
+                            time);
+                    });
+            }
+        }
+
+
+        // -----------------------------------------------------
+        // Add Point Event（所有轨道都可以加点事件）
+        // -----------------------------------------------------
+
+        EventType[] pointEventTypes =
+            EventFactory.GetPointEventTypes();
+
+        foreach (
+            EventType peType
+            in pointEventTypes)
+        {
+            menu.AddItem(
+                new GUIContent(
+                    "Add Point Event/" +
+                    peType),
+                false,
+                () =>
+                {
+                    _controller.AddPointEvent(
+                        _trackData,
+                        peType,
                         time);
                 });
         }
@@ -1444,6 +2029,20 @@ public class TrackView
     public void UpdateLayout()
     {
         LayoutClips();
+
+        LayoutPointEventMarkers();
+    }
+
+
+    // =========================================================
+    // Rebuild Point Event Markers
+    //
+    // 结构变化时由外部调用
+    // =========================================================
+
+    public void RebuildPointEventMarkers()
+    {
+        BuildPointEventMarkers();
     }
 
 }

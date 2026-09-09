@@ -4,5 +4,6 @@ public enum ClipType
     Voice,
     Effect,
     Hitbox,
-    Behitbox
+    Behitbox,
+    StateEvent
 }

@@ -301,6 +301,13 @@ public class ActionView
             return;
         }
 
+        // 点事件标记自己处理点击 / 拖拽，不启动框选
+        if (IsPointEventMarker(
+                evt.target as VisualElement))
+        {
+            return;
+        }
+
         _marqueeAdditive =
             evt.ctrlKey ||
             evt.commandKey;
@@ -591,6 +598,34 @@ public class ActionView
 
 
     // =========================================================
+    // Is Point Event Marker
+    //
+    // 沿父链查找点事件标记（标记带 USS 类名）
+    // =========================================================
+
+    private bool IsPointEventMarker(
+        VisualElement element)
+    {
+        VisualElement current =
+            element;
+
+        while (current != null)
+        {
+            if (current.ClassListContains(
+                    TrackView.PointEventMarkerClassName))
+            {
+                return true;
+            }
+
+            current =
+                current.parent;
+        }
+
+        return false;
+    }
+
+
+    // =========================================================
     // ????????????
     // =========================================================
 
@@ -679,6 +714,15 @@ public class ActionView
             () =>
             {
                 _controller.AddBehitboxTrack();
+            });
+
+        menu.AddItem(
+            new GUIContent(
+                "Add/State Event Track"),
+            false,
+            () =>
+            {
+                _controller.AddStateEventTrack();
             });
 
         menu.ShowAsContext();

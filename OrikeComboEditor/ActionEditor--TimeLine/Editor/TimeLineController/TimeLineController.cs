@@ -36,6 +36,23 @@ public class TimeLineController
 
 
     // =========================================================
+    // Point Event Selection
+    // =========================================================
+
+    public PointEventData SelectedPointEvent
+    {
+        get;
+        private set;
+    }
+
+    public event Action<PointEventData>
+        OnPointEventSelectionChanged;
+
+    public event Action<PointEventData>
+        OnPointEventChanged;
+
+
+    // =========================================================
     // Clipboard
     // =========================================================
 
@@ -94,6 +111,17 @@ public class TimeLineController
 
             _selectedClips.Add(
                 clipData);
+
+            // 选中 clip 时取消点事件选中
+            if (SelectedPointEvent !=
+                null)
+            {
+                SelectedPointEvent =
+                    null;
+
+                OnPointEventSelectionChanged?.Invoke(
+                    null);
+            }
         }
         else
         {
@@ -126,21 +154,32 @@ public class TimeLineController
 
     public void ClearSelection()
     {
-        if (_selectedClips.Count == 0 &&
-            SelectedClip == null)
-        {
-            return;
-        }
+        bool clipCleared =
+            _selectedClips.Count > 0 ||
+            SelectedClip != null;
 
         _selectedClips.Clear();
 
         SelectedClip = null;
 
-        OnSelectionChanged?.Invoke(
-            null);
+        if (clipCleared)
+        {
+            OnSelectionChanged?.Invoke(
+                null);
 
-        OnMultiSelectionChanged?.Invoke(
-            _selectedClips);
+            OnMultiSelectionChanged?.Invoke(
+                _selectedClips);
+        }
+
+        if (SelectedPointEvent !=
+            null)
+        {
+            SelectedPointEvent =
+                null;
+
+            OnPointEventSelectionChanged?.Invoke(
+                null);
+        }
     }
 
 
@@ -607,6 +646,13 @@ public class TimeLineController
     }
 
 
+    public TrackData AddStateEventTrack()
+    {
+        return AddTrack(
+            ClipType.StateEvent);
+    }
+
+
     // =========================================================
     // Delete Track
     // =========================================================
@@ -713,6 +759,12 @@ public class TimeLineController
         {
             prefix =
                 "Behitbox Track ";
+        }
+        else if (clipType ==
+                 ClipType.StateEvent)
+        {
+            prefix =
+                "State Event Track ";
         }
         else
         {
@@ -1167,6 +1219,82 @@ public class TimeLineController
 
 
     // =========================================================
+    // Add State Event Clip
+    // =========================================================
+
+    public StateEventData AddStateEventClip(
+        TrackData trackData,
+        EventType eventType,
+        float startTime)
+    {
+        if (trackData == null)
+        {
+            return null;
+        }
+
+        if (!trackData.CanAcceptClip(
+                ClipType.StateEvent))
+        {
+            return null;
+        }
+
+        if (trackData.Clips == null)
+        {
+            trackData.Clips =
+                new List<BaseClipData>();
+        }
+
+        StateEventData clip =
+            new StateEventData();
+
+        clip.EventType =
+            eventType;
+
+        clip.CreateEventInstance();
+
+        clip.StartTime =
+            Mathf.Max(
+                0f,
+                startTime);
+
+        clip.RefreshData();
+
+        clip.EndTime =
+            clip.StartTime +
+            clip.Length;
+
+        trackData.Clips.Add(
+            clip);
+
+        _selectedClips.Clear();
+
+        _selectedClips.Add(
+            clip);
+
+        SelectedClip =
+            clip;
+
+        SelectedPointEvent =
+            null;
+
+        MarkDirty();
+
+        OnSelectionChanged?.Invoke(
+            clip);
+
+        OnMultiSelectionChanged?.Invoke(
+            _selectedClips);
+
+        OnPointEventSelectionChanged?.Invoke(
+            null);
+
+        OnStructureChanged?.Invoke();
+
+        return clip;
+    }
+
+
+    // =========================================================
     // Find Track
     // =========================================================
 
@@ -1428,6 +1556,247 @@ public class TimeLineController
     }
 
 
+    // =========================================================
+    // State Event
+    // =========================================================
+
+    public void SetStateEventType(
+        StateEventData clipData,
+        EventType eventType)
+    {
+        if (clipData == null)
+        {
+            return;
+        }
+
+        clipData.EventType =
+            eventType;
+
+        clipData.CreateEventInstance();
+
+        NotifyClipChanged(
+            clipData);
+    }
+
+
+    /// <summary>
+    /// 标记 StateEvent 数据已修改
+    /// 用于事件实例字段被反射修改后标记 dirty
+    /// </summary>
+    public void SetStateEventDirty(
+        StateEventData clipData)
+    {
+        if (clipData == null)
+        {
+            return;
+        }
+
+        MarkDirty();
+    }
+
+
+    // =========================================================
+    // Point Event
+    // =========================================================
+
+    public PointEventData AddPointEvent(
+        TrackData trackData,
+        EventType eventType,
+        float time)
+    {
+        if (trackData == null)
+        {
+            return null;
+        }
+
+        if (trackData.PointEvents == null)
+        {
+            trackData.PointEvents =
+                new List<PointEventData>();
+        }
+
+        PointEventData pointEvent =
+            new PointEventData();
+
+        pointEvent.EventType =
+            eventType;
+
+        pointEvent.CreateEventInstance();
+
+        pointEvent.Time =
+            Mathf.Max(
+                0f,
+                time);
+
+        trackData.PointEvents.Add(
+            pointEvent);
+
+        // 选中点事件，取消 clip 选中
+        _selectedClips.Clear();
+
+        SelectedClip =
+            null;
+
+        SelectedPointEvent =
+            pointEvent;
+
+        MarkDirty();
+
+        OnSelectionChanged?.Invoke(
+            null);
+
+        OnMultiSelectionChanged?.Invoke(
+            _selectedClips);
+
+        OnPointEventSelectionChanged?.Invoke(
+            pointEvent);
+
+        OnStructureChanged?.Invoke();
+
+        return pointEvent;
+    }
+
+
+    public void SelectPointEvent(
+        PointEventData pointEvent)
+    {
+        // 选中点事件，取消 clip 选中
+        _selectedClips.Clear();
+
+        SelectedClip =
+            null;
+
+        SelectedPointEvent =
+            pointEvent;
+
+        OnSelectionChanged?.Invoke(
+            null);
+
+        OnMultiSelectionChanged?.Invoke(
+            _selectedClips);
+
+        OnPointEventSelectionChanged?.Invoke(
+            pointEvent);
+    }
+
+
+    public void ClearPointEventSelection()
+    {
+        if (SelectedPointEvent == null)
+        {
+            return;
+        }
+
+        SelectedPointEvent =
+            null;
+
+        OnPointEventSelectionChanged?.Invoke(
+            null);
+    }
+
+
+    public void SetPointEventType(
+        PointEventData pointEvent,
+        EventType eventType)
+    {
+        if (pointEvent == null)
+        {
+            return;
+        }
+
+        pointEvent.EventType =
+            eventType;
+
+        pointEvent.CreateEventInstance();
+
+        OnPointEventChanged?.Invoke(
+            pointEvent);
+    }
+
+
+    public void SetPointEventTime(
+        PointEventData pointEvent,
+        float time)
+    {
+        if (pointEvent == null)
+        {
+            return;
+        }
+
+        pointEvent.Time =
+            Mathf.Max(
+                0f,
+                time);
+
+        // 只通知数据变化，Marker 位置由 TrackView 局部刷新
+        // 不触发 OnStructureChanged，避免整个窗口重建导致输入焦点丢失
+        OnPointEventChanged?.Invoke(
+            pointEvent);
+    }
+
+
+    public void SetPointEventName(
+        PointEventData pointEvent,
+        string name)
+    {
+        if (pointEvent == null)
+        {
+            return;
+        }
+
+        pointEvent.Name =
+            name;
+
+        OnPointEventChanged?.Invoke(
+            pointEvent);
+    }
+
+
+    /// <summary>
+    /// 标记 PointEvent 数据已修改
+    /// </summary>
+    public void SetPointEventDirty(
+        PointEventData pointEvent)
+    {
+        if (pointEvent == null)
+        {
+            return;
+        }
+
+        MarkDirty();
+    }
+
+
+    public void DeletePointEvent(
+        TrackData trackData,
+        PointEventData pointEvent)
+    {
+        if (trackData == null ||
+            pointEvent == null ||
+            trackData.PointEvents == null)
+        {
+            return;
+        }
+
+        trackData.PointEvents.Remove(
+            pointEvent);
+
+        if (SelectedPointEvent ==
+            pointEvent)
+        {
+            SelectedPointEvent =
+                null;
+
+            OnPointEventSelectionChanged?.Invoke(
+                null);
+        }
+
+        MarkDirty();
+
+        OnStructureChanged?.Invoke();
+    }
+
+
     public void SetClipName(
         BaseClipData clipData,
         string clipName)
@@ -1539,6 +1908,14 @@ public class TimeLineController
         // 由用户在 Inspector 里自由调整
         if (clipData
             is HitboxClipData)
+        {
+            return float.MaxValue;
+        }
+
+        // State Event
+        // 由用户在 Inspector 里自由调整
+        if (clipData
+            is StateEventData)
         {
             return float.MaxValue;
         }
@@ -1693,6 +2070,36 @@ public class TimeLineController
 
             clone.EndTime =
                 hitboxClipData.EndTime;
+
+            return clone;
+        }
+
+        if (source
+            is StateEventData
+                stateEventClipData)
+        {
+            StateEventData clone =
+                new StateEventData();
+
+            clone.Name =
+                source.Name;
+
+            clone.EventType =
+                stateEventClipData.EventType;
+
+            // 重新创建事件实例
+            // （[SerializeReference] 对象的深拷贝比较复杂
+            // 这里按类型重建一份新的默认实例）
+            clone.CreateEventInstance();
+
+            clone.StartTime =
+                stateEventClipData.StartTime;
+
+            clone.Length =
+                stateEventClipData.Length;
+
+            clone.EndTime =
+                stateEventClipData.EndTime;
 
             return clone;
         }

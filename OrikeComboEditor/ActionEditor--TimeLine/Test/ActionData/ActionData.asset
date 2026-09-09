@@ -16,12 +16,102 @@ MonoBehaviour:
   - TrackName: "\u52A8\u753B"
     ClipType: 0
     Clips: []
-  - TrackName: Animation Track 2
-    ClipType: 0
-    Clips: []
+    PointEvents: []
   - TrackName: Voice Track 1
     ClipType: 1
     Clips: []
+    PointEvents: []
+  - TrackName: Effect Track 1
+    ClipType: 2
+    Clips:
+    - rid: 4637300449432830039
+    PointEvents:
+    - rid: 4637300449432830063
+  - TrackName: Hitbox Track 1
+    ClipType: 3
+    Clips:
+    - rid: 4637300449432830041
+    PointEvents:
+    - rid: 4637300449432830061
+  - TrackName: Behitbox Track 1
+    ClipType: 4
+    Clips:
+    - rid: 4637300449432830047
+    PointEvents: []
+  - TrackName: State Event Track 1
+    ClipType: 5
+    Clips:
+    - rid: 4637300449432830050
+    PointEvents: []
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 4637300449432830039
+      type: {class: EffectClipData, ns: , asm: Assembly-CSharp}
+      data:
+        StartTime: 1.2829773
+        EndTime: 6.282977
+        Length: 5
+        Name: Effect
+        EffectPrefab: {fileID: 6905034622562504357, guid: 3cabae247172a3e45bd132b01e55ad44, type: 3}
+        AttachBone: m_ParticleSystemPos
+        LocalOffset: {x: 0, y: 0, z: 0}
+    - rid: 4637300449432830041
+      type: {class: HitboxClipData, ns: , asm: Assembly-CSharp}
+      data:
+        StartTime: 0.27023903
+        EndTime: 0.770239
+        Length: 0.5
+        Name: 
+        HitboxPrefab: {fileID: 3054661091973445880, guid: f401270c6d5e49643a4ec6410fe5c75a, type: 3}
+        AttachBone: hitbox
+        LocalOffset: {x: 0, y: 0, z: 0}
+    - rid: 4637300449432830047
+      type: {class: BehitboxClipData, ns: , asm: Assembly-CSharp}
+      data:
+        StartTime: 1.280118
+        EndTime: 1.780118
+        Length: 0.5
+        Name: 
+        HitboxPrefab: {fileID: 1401320723581487805, guid: 94e386a0b0f47b044ba3e6b888b4e88e, type: 3}
+        AttachBone: behitbox
+        LocalOffset: {x: 0, y: 0, z: 0}
+    - rid: 4637300449432830050
+      type: {class: StateEventData, ns: , asm: Assembly-CSharp}
+      data:
+        StartTime: 14.171901
+        EndTime: 15.171901
+        Length: 1
+        Name: 
+        EventType: 1001
+        StateEvent:
+          rid: 4637300449432830051
+    - rid: 4637300449432830051
+      type: {class: DebugTestStateEvent, ns: , asm: Assembly-CSharp}
+      data:
+        _message: Debug State Event
+        _logInterval: 0.5
+    - rid: 4637300449432830061
+      type: {class: PointEventData, ns: , asm: Assembly-CSharp}
+      data:
+        Name: Point Event
+        Time: 5.2266793
+        EventType: 2001
+        PointEvent:
+          rid: 4637300449432830062
+    - rid: 4637300449432830062
+      type: {class: DebugTestPointEvent, ns: , asm: Assembly-CSharp}
+      data:
+        _message: Debug Point Event
+    - rid: 4637300449432830063
+      type: {class: PointEventData, ns: , asm: Assembly-CSharp}
+      data:
+        Name: Point Event
+        Time: 8.533332
+        EventType: 2001
+        PointEvent:
+          rid: 4637300449432830064
+    - rid: 4637300449432830064
+      type: {class: DebugTestPointEvent, ns: , asm: Assembly-CSharp}
+      data:
+        _message: Debug Point Event

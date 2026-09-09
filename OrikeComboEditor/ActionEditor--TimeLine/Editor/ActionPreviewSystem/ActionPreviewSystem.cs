@@ -46,6 +46,19 @@ public class ActionPreviewSystem
 
 
     // =========================================================
+    // State Events
+    //
+    // 当前已触发 OnStart 但未 OnEnd 的持续事件
+    // 进入 Clip 时间段时加入，离开时移除并调用 OnEnd
+    // =========================================================
+
+    private readonly HashSet<
+        StateEventData> _activeStateEvents =
+        new HashSet<
+            StateEventData>();
+
+
+    // =========================================================
     // Constructor
     // =========================================================
 
@@ -149,6 +162,8 @@ public class ActionPreviewSystem
 
             StopHitboxIfNeeded();
 
+            StopStateEvents();
+
             return;
         }
 
@@ -159,6 +174,8 @@ public class ActionPreviewSystem
             StopEffectIfNeeded();
 
             StopHitboxIfNeeded();
+
+            StopStateEvents();
 
             return;
         }
@@ -233,52 +250,209 @@ public class ActionPreviewSystem
         ref bool hasEffect,
         ref bool hasHitbox)
     {
-        if (track == null ||
-            track.Clips == null)
+        if (track == null)
         {
             return;
         }
 
-        foreach (
-            BaseClipData clip
-            in track.Clips)
+        if (track.Clips != null)
         {
-            if (clip == null)
+            foreach (
+                BaseClipData clip
+                in track.Clips)
             {
-                continue;
-            }
+                if (clip == null)
+                {
+                    continue;
+                }
 
-            BasePreviewData previewData =
-                clip.GetPreviewDataAtTime(
+                // =================================================
+                // State Event 持续事件
+                // 不走 PreviewData，直接调用事件方法
+                // =================================================
+
+                if (clip is StateEventData
+                    stateEvent)
+                {
+                    UpdateStateEvent(
+                        stateEvent,
+                        actionTime);
+
+                    continue;
+                }
+
+
+                BasePreviewData previewData =
+                    clip.GetPreviewDataAtTime(
+                        actionTime);
+
+                if (previewData == null)
+                {
+                    continue;
+                }
+
+                if (previewData
+                    is VoicePreviewData)
+                {
+                    hasVoice = true;
+                }
+
+                if (previewData
+                    is EffectPreviewData)
+                {
+                    hasEffect = true;
+                }
+
+                if (previewData
+                    is HitboxPreviewData)
+                {
+                    hasHitbox = true;
+                }
+
+                ApplyPreviewData(
+                    previewData,
+                    frameRate,
+                    isPlaying);
+            }
+        }
+
+
+        // =====================================================
+        // Point Event 点事件
+        // 检测 Playhead 是否穿越事件时间点
+        // =====================================================
+
+        if (track.PointEvents != null)
+        {
+            foreach (
+                PointEventData pointEvent
+                in track.PointEvents)
+            {
+                if (pointEvent == null)
+                {
+                    continue;
+                }
+
+                CheckPointEvent(
+                    pointEvent,
                     actionTime);
+            }
+        }
+    }
 
-            if (previewData == null)
+
+    // =========================================================
+    // Update State Event
+    //
+    // 根据当前时间决定调用 OnStart / OnUpdate / OnEnd
+    // =========================================================
+
+    private void UpdateStateEvent(
+        StateEventData stateEvent,
+        float actionTime)
+    {
+        if (stateEvent == null ||
+            stateEvent.StateEvent == null)
+        {
+            return;
+        }
+
+        bool inRange =
+            stateEvent.ContainsTime(
+                actionTime);
+
+        bool active =
+            _activeStateEvents.Contains(
+                stateEvent);
+
+        float delta =
+            actionTime -
+            _lastActionTime;
+
+        if (inRange)
+        {
+            if (!active)
             {
-                continue;
+                // 进入时间段
+                stateEvent
+                    .StateEvent
+                    .OnStart();
+
+                _activeStateEvents.Add(
+                    stateEvent);
             }
 
-            if (previewData
-                is VoicePreviewData)
+            // 时间段内每帧更新
+            stateEvent
+                .StateEvent
+                .OnUpdate(delta);
+        }
+        else
+        {
+            if (active)
             {
-                hasVoice = true;
-            }
+                // 离开时间段
+                stateEvent
+                    .StateEvent
+                    .OnEnd();
 
-            if (previewData
-                is EffectPreviewData)
-            {
-                hasEffect = true;
+                _activeStateEvents.Remove(
+                    stateEvent);
             }
+        }
+    }
 
-            if (previewData
-                is HitboxPreviewData)
-            {
-                hasHitbox = true;
-            }
 
-            ApplyPreviewData(
-                previewData,
-                frameRate,
-                isPlaying);
+    // =========================================================
+    // Check Point Event
+    //
+    // 当 Playhead 穿越事件时间点时调用 OnCall
+    // 支持正向和反向拖动
+    // =========================================================
+
+    private void CheckPointEvent(
+        PointEventData pointEvent,
+        float actionTime)
+    {
+        if (pointEvent == null ||
+            pointEvent.PointEvent == null)
+        {
+            return;
+        }
+
+        float pointTime =
+            pointEvent.Time;
+
+        float lastTime =
+            _lastActionTime;
+
+        // 首次调用不触发
+        if (lastTime < 0f)
+        {
+            return;
+        }
+
+        bool crossed = false;
+
+        // 正向：lastTime < pointTime <= actionTime
+        if (lastTime < pointTime &&
+            actionTime >= pointTime)
+        {
+            crossed = true;
+        }
+
+        // 反向：actionTime <= pointTime < lastTime
+        if (actionTime < pointTime &&
+            lastTime >= pointTime)
+        {
+            crossed = true;
+        }
+
+        if (crossed)
+        {
+            pointEvent
+                .PointEvent
+                .OnCall();
         }
     }
 
@@ -786,6 +960,33 @@ public class ActionPreviewSystem
             null;
 
         StopHitboxIfNeeded();
+
+        StopStateEvents();
+    }
+
+
+    // =========================================================
+    // Stop State Events
+    //
+    // 对所有活动中的持续事件调用 OnEnd
+    // =========================================================
+
+    private void StopStateEvents()
+    {
+        foreach (
+            StateEventData stateEvent
+            in _activeStateEvents)
+        {
+            if (stateEvent != null &&
+                stateEvent.StateEvent != null)
+            {
+                stateEvent
+                    .StateEvent
+                    .OnEnd();
+            }
+        }
+
+        _activeStateEvents.Clear();
     }
 
 

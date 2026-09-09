@@ -644,6 +644,15 @@ public class ClipView : VisualElement
                 0.25f);
         }
 
+        // State Event Clip
+        if (ClipData is StateEventData)
+        {
+            return new Color(
+                1f,
+                0.85f,
+                0.25f);
+        }
+
         // Default
         return new Color(
             0.6f,
@@ -762,6 +771,28 @@ public class ClipView : VisualElement
             {
                 _nameLabel.text =
                     fallback;
+            }
+
+            return;
+        }
+
+        // State Event
+        if (ClipData is StateEventData
+            stateEventClipData)
+        {
+            if (stateEventClipData.StateEvent !=
+                null)
+            {
+                _nameLabel.text =
+                    stateEventClipData
+                        .StateEvent
+                        .GetType()
+                        .Name;
+            }
+            else
+            {
+                _nameLabel.text =
+                    "State Event";
             }
 
             return;

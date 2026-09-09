@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using System;
 
 [CustomEditor(typeof(ActionData))]
 public class ActionDataEditor : Editor
@@ -38,7 +39,7 @@ public class ActionDataEditor : Editor
         if (_actionData == null)
         {
             EditorGUILayout.HelpBox(
-                "ActionData ??Ч??",
+                "ActionData 无效。",
                 MessageType.Error);
 
             return;
@@ -105,13 +106,13 @@ public class ActionDataEditor : Editor
             _actionData.Tracks.Count == 0)
         {
             EditorGUILayout.HelpBox(
-                "??? ActionData ??? Track??",
+                "当前 ActionData 没有任何 Track。",
                 MessageType.Info);
 
             return;
         }
 
-        // ?????????????? Track
+        // 清理已经失效的 Track
         List<TrackData> invalidTracks =
             new List<TrackData>();
 
@@ -202,7 +203,7 @@ public class ActionDataEditor : Editor
             "]";
 
 
-        // ????????????? foldout ??
+        // 标题（可点击展开/收起的 foldout 标题）
         bool newFoldout =
             EditorGUILayout.Foldout(
                 foldout,
@@ -236,7 +237,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // ??????
+        // 折叠内容
         // -----------------------------------------------------
 
         if (!_trackFoldouts[track])
@@ -326,7 +327,7 @@ public class ActionDataEditor : Editor
         if (track.Clips.Count == 0)
         {
             EditorGUILayout.HelpBox(
-                "??? Track ??? Clip??",
+                "当前 Track 没有任何 Clip。",
                 MessageType.Info);
 
             return;
@@ -512,13 +513,24 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
+        // State Event Clip
+        // -----------------------------------------------------
+
+        else if (clip is StateEventData)
+        {
+            DrawStateEventClip(
+                clip as StateEventData);
+        }
+
+
+        // -----------------------------------------------------
         // Unknown
         // -----------------------------------------------------
 
         else
         {
             EditorGUILayout.HelpBox(
-                "δ??? Clip ?????",
+                "未知的 Clip 类型。",
                 MessageType.Warning);
         }
 
@@ -730,6 +742,238 @@ public class ActionDataEditor : Editor
 
 
     // =========================================================
+    // State Event Clip
+    // =========================================================
+
+    private void DrawStateEventClip(
+        StateEventData clip)
+    {
+        if (clip == null)
+        {
+            return;
+        }
+
+
+        // Event Type
+        EventType[] stateTypes =
+            EventFactory.GetStateEventTypes();
+
+        int selectedIndex =
+            0;
+
+        for (int i = 0;
+             i < stateTypes.Length;
+             i++)
+        {
+            if (stateTypes[i] ==
+                clip.EventType)
+            {
+                selectedIndex = i;
+                break;
+            }
+        }
+
+        string[] typeNames =
+            new string[stateTypes.Length];
+
+        for (int i = 0;
+             i < stateTypes.Length;
+             i++)
+        {
+            typeNames[i] =
+                stateTypes[i].ToString();
+        }
+
+        int newIndex =
+            EditorGUILayout.Popup(
+                "Event Type",
+                selectedIndex,
+                typeNames);
+
+        if (newIndex != selectedIndex)
+        {
+            clip.EventType =
+                stateTypes[newIndex];
+
+            clip.CreateEventInstance();
+
+            GUI.changed = true;
+        }
+
+
+        // 事件字段
+        if (clip.StateEvent != null)
+        {
+            DrawStateEventFieldsIMGUI(
+                clip.StateEvent);
+        }
+    }
+
+
+    // IMGUI 下用反射绘制事件字段（简化版）
+    private void DrawStateEventFieldsIMGUI(
+        object eventInstance)
+    {
+        if (eventInstance == null)
+        {
+            return;
+        }
+
+        Type type =
+            eventInstance.GetType();
+
+        System.Reflection.FieldInfo[] fields =
+            type.GetFields(
+                System.Reflection
+                    .BindingFlags.Instance |
+                System.Reflection
+                    .BindingFlags.Public |
+                System.Reflection
+                    .BindingFlags.NonPublic);
+
+        foreach (
+            System.Reflection.FieldInfo field
+            in fields)
+        {
+            bool isSerialized =
+                field.IsPublic ||
+                Attribute.IsDefined(
+                    field,
+                    typeof(
+                        SerializeField));
+
+            if (!isSerialized)
+            {
+                continue;
+            }
+
+            if (Attribute.IsDefined(
+                    field,
+                    typeof(
+                        HideInInspector)))
+            {
+                continue;
+            }
+
+            string label =
+                ObjectNames.NicifyVariableName(
+                    field.Name);
+
+            Type ft =
+                field.FieldType;
+
+            if (ft == typeof(int))
+            {
+                int v =
+                    (int)field.GetValue(
+                        eventInstance);
+
+                int nv =
+                    EditorGUILayout.IntField(
+                        label,
+                        v);
+
+                if (nv != v)
+                {
+                    field.SetValue(
+                        eventInstance,
+                        nv);
+
+                    GUI.changed = true;
+                }
+            }
+            else if (ft == typeof(float))
+            {
+                float v =
+                    (float)field.GetValue(
+                        eventInstance);
+
+                float nv =
+                    EditorGUILayout.FloatField(
+                        label,
+                        v);
+
+                if (nv != v)
+                {
+                    field.SetValue(
+                        eventInstance,
+                        nv);
+
+                    GUI.changed = true;
+                }
+            }
+            else if (ft == typeof(bool))
+            {
+                bool v =
+                    (bool)field.GetValue(
+                        eventInstance);
+
+                bool nv =
+                    EditorGUILayout.Toggle(
+                        label,
+                        v);
+
+                if (nv != v)
+                {
+                    field.SetValue(
+                        eventInstance,
+                        nv);
+
+                    GUI.changed = true;
+                }
+            }
+            else if (ft == typeof(string))
+            {
+                string v =
+                    (string)field.GetValue(
+                        eventInstance)
+                    ?? string.Empty;
+
+                string nv =
+                    EditorGUILayout.TextField(
+                        label,
+                        v);
+
+                if (nv != v)
+                {
+                    field.SetValue(
+                        eventInstance,
+                        nv);
+
+                    GUI.changed = true;
+                }
+            }
+            else if (ft == typeof(Vector3))
+            {
+                Vector3 v =
+                    (Vector3)field.GetValue(
+                        eventInstance);
+
+                Vector3 nv =
+                    EditorGUILayout.Vector3Field(
+                        label,
+                        v);
+
+                if (nv != v)
+                {
+                    field.SetValue(
+                        eventInstance,
+                        nv);
+
+                    GUI.changed = true;
+                }
+            }
+            else
+            {
+                EditorGUILayout.LabelField(
+                    label,
+                    $"<{ft.Name}>");
+            }
+        }
+    }
+
+
+    // =========================================================
     // Add Clip Button
     // =========================================================
 
@@ -773,6 +1017,12 @@ public class ActionDataEditor : Editor
             buttonText =
                 "+ Add Behitbox Clip";
         }
+        else if (track.ClipType ==
+                 ClipType.StateEvent)
+        {
+            buttonText =
+                "+ Add State Event Clip";
+        }
         else
         {
             buttonText =
@@ -789,7 +1039,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // ??? List ????
+        // 确保 List 已初始化
         // -----------------------------------------------------
 
         if (track.Clips == null)
@@ -800,9 +1050,9 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // ?????
-        // ??????????????????
-        // ??????? SerializeReference InsertArrayElement
+        // 创建 Clip 实例
+        // 根据轨道类型创建对应的 ClipData
+        // 直接 new 即可，SerializeReference 字段由 Unity 自动序列化
         // -----------------------------------------------------
 
         BaseClipData newClip = null;
@@ -837,6 +1087,12 @@ public class ActionDataEditor : Editor
             newClip =
                 new BehitboxClipData();
         }
+        else if (track.ClipType ==
+                 ClipType.StateEvent)
+        {
+            newClip =
+                new StateEventData();
+        }
 
 
         if (newClip == null)
@@ -846,7 +1102,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // ????
+        // 默认值
         // -----------------------------------------------------
 
         newClip.StartTime =
@@ -860,7 +1116,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // ????
+        // 添加到列表
         // -----------------------------------------------------
 
         track.Clips.Add(
@@ -929,6 +1185,15 @@ public class ActionDataEditor : Editor
         {
             AddTrack(
                 ClipType.Behitbox);
+        }
+
+
+        if (GUILayout.Button(
+                "State Event Track",
+                GUILayout.Height(26)))
+        {
+            AddTrack(
+                ClipType.StateEvent);
         }
 
 
@@ -1012,6 +1277,12 @@ public class ActionDataEditor : Editor
             prefix =
                 "Behitbox Track ";
         }
+        else if (clipType ==
+                 ClipType.StateEvent)
+        {
+            prefix =
+                "State Event Track ";
+        }
         else
         {
             prefix =
@@ -1079,7 +1350,7 @@ public class ActionDataEditor : Editor
         bool confirm =
             EditorUtility.DisplayDialog(
                 "Delete Track",
-                "?????????? Track ??\n???е????? Clip ????????",
+                "确定要删除这个 Track 吗？\n轨道中的所有 Clip 也会被一起删除。",
                 "Delete",
                 "Cancel");
 
@@ -1129,7 +1400,7 @@ public class ActionDataEditor : Editor
         bool confirm =
             EditorUtility.DisplayDialog(
                 "Delete Clip",
-                "?????????? Clip ??",
+                "确定要删除这个 Clip 吗？",
                 "Delete",
                 "Cancel");
 
@@ -1204,6 +1475,13 @@ public class ActionDataEditor : Editor
 
             hitboxClip.RefreshData();
         }
+        else if (clip is StateEventData)
+        {
+            StateEventData stateClip =
+                clip as StateEventData;
+
+            stateClip.RefreshData();
+        }
 
         UpdateClipEndTime(
             clip);
@@ -1245,7 +1523,7 @@ public class ActionDataEditor : Editor
 
 
         // =====================================================
-        // ??????? Timeline ?????????????
+        // 优先显示在 Timeline 中设置过的自定义名字
         // =====================================================
 
         if (!string.IsNullOrEmpty(
@@ -1367,6 +1645,31 @@ public class ActionDataEditor : Editor
 
             return
                 "Hitbox Clip " +
+                (index + 1);
+        }
+
+
+        // =====================================================
+        // State Event Clip
+        // =====================================================
+
+        if (clip is StateEventData)
+        {
+            StateEventData stateClip =
+                clip as StateEventData;
+
+
+            if (stateClip.StateEvent != null)
+            {
+                return
+                    stateClip.StateEvent
+                        .GetType()
+                        .Name;
+            }
+
+
+            return
+                "State Event Clip " +
                 (index + 1);
         }
 
