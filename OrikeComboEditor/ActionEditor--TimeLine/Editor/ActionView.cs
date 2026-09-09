@@ -78,7 +78,7 @@ public class ActionView
 
 
     // =========================================================
-    // 创建左右两个区域
+    // ????????????????
     // =========================================================
 
     private void CreateContainers()
@@ -114,7 +114,7 @@ public class ActionView
 
 
     // =========================================================
-    // 创建 Track
+    // ???? Track
     // =========================================================
 
     private void BuildTracks()
@@ -153,7 +153,7 @@ public class ActionView
             _rightTrackContainer.Add(
                 trackView.RightElement);
 
-            // 最后一条不添加间隔
+            // ??????????????
             if (i <
                 _actionData.Tracks.Count - 1)
             {
@@ -193,7 +193,7 @@ public class ActionView
 
 
     // =========================================================
-    // 框选区域
+    // ???????
     // =========================================================
 
     private void CreateSelectionBox()
@@ -265,7 +265,7 @@ public class ActionView
 
 
     // =========================================================
-    // 框选事件
+    // ??????
     // =========================================================
 
     private void RegisterMarqueeEvents()
@@ -293,8 +293,8 @@ public class ActionView
             return;
         }
 
-        // 如果鼠标按下的位置属于 Clip，
-        // 就交给 ClipView 自己处理移动 / 缩放。
+        // ?????????λ?????? Clip??
+        // ????? ClipView ?????????? / ?????
         if (FindClipView(
                 evt.target as VisualElement) != null)
         {
@@ -305,8 +305,8 @@ public class ActionView
             evt.ctrlKey ||
             evt.commandKey;
 
-        // 普通框选会先清除原来的选择。
-        // Ctrl / Command 框选则保留原来的选择。
+        // ?????????????????????
+        // Ctrl / Command ???????????????
         if (!_marqueeAdditive)
         {
             _controller?.ClearSelection();
@@ -400,7 +400,7 @@ public class ActionView
 
 
     // =========================================================
-    // 获取框选矩形
+    // ??????????
     // =========================================================
 
     private Rect GetSelectionRect()
@@ -434,7 +434,7 @@ public class ActionView
 
 
     // =========================================================
-    // 更新框选框显示
+    // ???????????
     // =========================================================
 
     private void UpdateSelectionBox()
@@ -457,7 +457,7 @@ public class ActionView
 
 
     // =========================================================
-    // 更新框选结果
+    // ?????????
     // =========================================================
 
     private void UpdateMarqueeSelection()
@@ -499,16 +499,16 @@ public class ActionView
         }
 
 
-        // 普通框选：
-        // 每次根据当前框选范围重新建立选择。
+        // ????????
+        // ??θ??????????Χ??????????
         if (!_marqueeAdditive)
         {
             _controller?.ClearSelection();
         }
 
 
-        // Ctrl / Command 框选：
-        // 将框选到的 Clip 添加到现有选择中。
+        // Ctrl / Command ?????
+        // ????????? Clip ?????????????С?
         if (_controller != null)
         {
             foreach (BaseClipData clip
@@ -528,7 +528,7 @@ public class ActionView
 
 
     // =========================================================
-    // 获取 Clip 在 ActionView 中的矩形
+    // ??? Clip ?? ActionView ?е????
     // =========================================================
 
     private Rect GetClipRectInActionView(
@@ -563,7 +563,7 @@ public class ActionView
 
 
     // =========================================================
-    // 查找当前元素是否属于 Clip
+    // ???????????????? Clip
     // =========================================================
 
     private ClipView FindClipView(
@@ -591,7 +591,7 @@ public class ActionView
 
 
     // =========================================================
-    // 右键空白区域菜单
+    // ????????????
     // =========================================================
 
     private void RegisterEmptyAreaContextMenu()
@@ -613,8 +613,8 @@ public class ActionView
         VisualElement picked =
             evt.target as VisualElement;
 
-        // 只有点击轨道列表下方真正的空白区域时，
-        // 才显示添加 Track 菜单。
+        // ??е??????б??·????????????????
+        // ????????? Track ?????
         if (picked != _leftTrackContainer)
         {
             return;
@@ -652,6 +652,33 @@ public class ActionView
             () =>
             {
                 _controller.AddVoiceTrack();
+            });
+
+        menu.AddItem(
+            new GUIContent(
+                "Add/Effect Track"),
+            false,
+            () =>
+            {
+                _controller.AddEffectTrack();
+            });
+
+        menu.AddItem(
+            new GUIContent(
+                "Add/Hitbox Track"),
+            false,
+            () =>
+            {
+                _controller.AddHitboxTrack();
+            });
+
+        menu.AddItem(
+            new GUIContent(
+                "Add/Behitbox Track"),
+            false,
+            () =>
+            {
+                _controller.AddBehitboxTrack();
             });
 
         menu.ShowAsContext();

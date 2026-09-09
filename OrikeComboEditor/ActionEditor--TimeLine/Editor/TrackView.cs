@@ -60,6 +60,24 @@ public class TrackView
 
 
     // =========================================================
+    // Effect Picker
+    // =========================================================
+
+    private int _effectPickerControlID;
+
+    private bool _waitingForEffectPicker;
+
+
+    // =========================================================
+    // Hitbox Picker
+    // =========================================================
+
+    private int _hitboxPickerControlID;
+
+    private bool _waitingForHitboxPicker;
+
+
+    // =========================================================
     // Public
     // =========================================================
 
@@ -276,12 +294,12 @@ public class TrackView
             _trackData.TrackName);
 
 
-        // 隐藏 Label
+        // ???? Label
         _trackNameLabel.style.display =
             DisplayStyle.None;
 
 
-        // 添加 TextField
+        // ???? TextField
         if (_trackNameField.parent !=
             _leftElement)
         {
@@ -296,9 +314,9 @@ public class TrackView
 
 
         // =====================================================
-        // 延迟一帧获取焦点
+        // ????????????
         //
-        // 防止 UI Toolkit 刚添加元素时 Focus 失败
+        // ??? UI Toolkit ?????????? Focus ???
         // =====================================================
 
         _trackNameField.schedule.Execute(
@@ -364,7 +382,7 @@ public class TrackView
             OnTrackNameFocusOut);
 
 
-        // 防止 TextField 的鼠标事件继续影响
+        // ??? TextField ???????????????
         // Timeline Root
         _trackNameField.RegisterCallback<
             PointerDownEvent>(
@@ -715,6 +733,39 @@ public class TrackView
         }
 
 
+        if (_trackData != null &&
+            _trackData.ClipType ==
+            ClipType.Effect)
+        {
+            return new Color(
+                0.85f,
+                0.45f,
+                0.25f);
+        }
+
+
+        if (_trackData != null &&
+            _trackData.ClipType ==
+            ClipType.Hitbox)
+        {
+            return new Color(
+                0.95f,
+                0.25f,
+                0.25f);
+        }
+
+
+        if (_trackData != null &&
+            _trackData.ClipType ==
+            ClipType.Behitbox)
+        {
+            return new Color(
+                0.65f,
+                0.25f,
+                0.85f);
+        }
+
+
         return new Color(
             0.7f,
             0.7f,
@@ -836,8 +887,8 @@ public class TrackView
 
 
         // -----------------------------------------------------
-        // 如果右键点击的是 Clip
-        // ClipView 自己处理
+        // ????????????? Clip
+        // ClipView ???????
         // -----------------------------------------------------
 
         VisualElement picked =
@@ -932,6 +983,63 @@ public class TrackView
                 () =>
                 {
                     OpenVoicePicker(
+                        time);
+                });
+        }
+
+
+        // -----------------------------------------------------
+        // Effect Track
+        // -----------------------------------------------------
+
+        else if (_trackData.ClipType ==
+                 ClipType.Effect)
+        {
+            menu.AddItem(
+                new GUIContent(
+                    "Add/Effect Clip"),
+                false,
+                () =>
+                {
+                    OpenEffectPicker(
+                        time);
+                });
+        }
+
+
+        // -----------------------------------------------------
+        // Hitbox Track
+        // -----------------------------------------------------
+
+        else if (_trackData.ClipType ==
+                 ClipType.Hitbox)
+        {
+            menu.AddItem(
+                new GUIContent(
+                    "Add/Hitbox Clip"),
+                false,
+                () =>
+                {
+                    OpenHitboxPicker(
+                        time);
+                });
+        }
+
+
+        // -----------------------------------------------------
+        // Behitbox Track
+        // -----------------------------------------------------
+
+        else if (_trackData.ClipType ==
+                 ClipType.Behitbox)
+        {
+            menu.AddItem(
+                new GUIContent(
+                    "Add/Behitbox Clip"),
+                false,
+                () =>
+                {
+                    OpenHitboxPicker(
                         time);
                 });
         }
@@ -1136,9 +1244,177 @@ public class TrackView
         _waitingForVoicePicker =
             false;
 
-
         EditorApplication.update -=
             CheckVoicePicker;
+    }
+
+
+    // =========================================================
+    // Effect Picker
+    // =========================================================
+
+    private void OpenEffectPicker(
+        float time)
+    {
+        _pendingAddTime =
+            time;
+
+        _effectPickerControlID =
+            GUIUtility.GetControlID(
+                FocusType.Passive);
+
+        _waitingForEffectPicker =
+            true;
+
+        EditorGUIUtility.ShowObjectPicker<
+            GameObject>(
+            null,
+            false,
+            "",
+            _effectPickerControlID);
+
+        EditorApplication.update +=
+            CheckEffectPicker;
+    }
+
+
+    private void CheckEffectPicker()
+    {
+        if (!_waitingForEffectPicker)
+        {
+            EditorApplication.update -=
+                CheckEffectPicker;
+
+            return;
+        }
+
+        int pickerID =
+            EditorGUIUtility
+                .GetObjectPickerControlID();
+
+        if (pickerID !=
+            _effectPickerControlID)
+        {
+            return;
+        }
+
+        Object selectedObject =
+            EditorGUIUtility
+                .GetObjectPickerObject();
+
+        if (selectedObject == null)
+        {
+            return;
+        }
+
+        GameObject effectPrefab =
+            selectedObject
+                as GameObject;
+
+        if (effectPrefab != null)
+        {
+            _controller.AddEffectClip(
+                _trackData,
+                effectPrefab,
+                _pendingAddTime);
+        }
+
+        _waitingForEffectPicker =
+            false;
+
+        EditorApplication.update -=
+            CheckEffectPicker;
+    }
+
+
+    // =========================================================
+    // Hitbox Picker
+    // =========================================================
+
+    private void OpenHitboxPicker(
+        float time)
+    {
+        _pendingAddTime =
+            time;
+
+        _hitboxPickerControlID =
+            GUIUtility.GetControlID(
+                FocusType.Passive);
+
+        _waitingForHitboxPicker =
+            true;
+
+        EditorGUIUtility.ShowObjectPicker<
+            GameObject>(
+            null,
+            false,
+            "",
+            _hitboxPickerControlID);
+
+        EditorApplication.update +=
+            CheckHitboxPicker;
+    }
+
+
+    private void CheckHitboxPicker()
+    {
+        if (!_waitingForHitboxPicker)
+        {
+            EditorApplication.update -=
+                CheckHitboxPicker;
+
+            return;
+        }
+
+        int pickerID =
+            EditorGUIUtility
+                .GetObjectPickerControlID();
+
+        if (pickerID !=
+            _hitboxPickerControlID)
+        {
+            return;
+        }
+
+        Object selectedObject =
+            EditorGUIUtility
+                .GetObjectPickerObject();
+
+        if (selectedObject == null)
+        {
+            return;
+        }
+
+        GameObject hitboxPrefab =
+            selectedObject
+                as GameObject;
+
+        if (hitboxPrefab != null &&
+            _trackData != null)
+        {
+            if (_trackData.ClipType ==
+                ClipType.Hitbox)
+            {
+                _controller.AddHitboxClip(
+                    _trackData,
+                    hitboxPrefab,
+                    _pendingAddTime);
+            }
+            else if (_trackData.ClipType ==
+                     ClipType.Behitbox)
+            {
+                _controller.AddBehitboxClip(
+                    _trackData,
+                    hitboxPrefab,
+                    _pendingAddTime);
+            }
+        }
+
+        _waitingForHitboxPicker =
+            false;
+
+        EditorApplication.update -=
+            CheckHitboxPicker;
     }
 
 

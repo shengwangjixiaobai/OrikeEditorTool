@@ -7,7 +7,7 @@ public class ActionDataEditor : Editor
 {
     private ActionData _actionData;
 
-    // 保存每个 Track 的展开/收起状态
+    // 每个 Track 折叠状态记录
     private readonly Dictionary<TrackData, bool> _trackFoldouts =
         new Dictionary<TrackData, bool>();
 
@@ -38,7 +38,7 @@ public class ActionDataEditor : Editor
         if (_actionData == null)
         {
             EditorGUILayout.HelpBox(
-                "ActionData 无效。",
+                "ActionData ??Ч??",
                 MessageType.Error);
 
             return;
@@ -105,13 +105,13 @@ public class ActionDataEditor : Editor
             _actionData.Tracks.Count == 0)
         {
             EditorGUILayout.HelpBox(
-                "当前 ActionData 没有 Track。",
+                "??? ActionData ??? Track??",
                 MessageType.Info);
 
             return;
         }
 
-        // 清理已经被删除的 Track
+        // ?????????????? Track
         List<TrackData> invalidTracks =
             new List<TrackData>();
 
@@ -202,7 +202,7 @@ public class ActionDataEditor : Editor
             "]";
 
 
-        // 这里使用真正的 foldout 状态
+        // ????????????? foldout ??
         bool newFoldout =
             EditorGUILayout.Foldout(
                 foldout,
@@ -236,7 +236,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // 收起状态
+        // ??????
         // -----------------------------------------------------
 
         if (!_trackFoldouts[track])
@@ -326,7 +326,7 @@ public class ActionDataEditor : Editor
         if (track.Clips.Count == 0)
         {
             EditorGUILayout.HelpBox(
-                "当前 Track 没有 Clip。",
+                "??? Track ??? Clip??",
                 MessageType.Info);
 
             return;
@@ -489,13 +489,36 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
+        // Effect Clip
+        // -----------------------------------------------------
+
+        else if (clip is EffectClipData)
+        {
+            DrawEffectClip(
+                clip as EffectClipData);
+        }
+
+
+        // -----------------------------------------------------
+        // Hitbox / Behitbox Clip
+        // （BehitboxClipData 继承 HitboxClipData，共用此分支）
+        // -----------------------------------------------------
+
+        else if (clip is HitboxClipData)
+        {
+            DrawHitboxClip(
+                clip as HitboxClipData);
+        }
+
+
+        // -----------------------------------------------------
         // Unknown
         // -----------------------------------------------------
 
         else
         {
             EditorGUILayout.HelpBox(
-                "未知的 Clip 类型。",
+                "δ??? Clip ?????",
                 MessageType.Warning);
         }
 
@@ -571,6 +594,142 @@ public class ActionDataEditor : Editor
 
 
     // =========================================================
+    // Effect Clip
+    // =========================================================
+
+    private void DrawEffectClip(
+        EffectClipData clip)
+    {
+        if (clip == null)
+        {
+            return;
+        }
+
+        GameObject newEffect =
+            (GameObject)EditorGUILayout.ObjectField(
+                "Effect",
+                clip.EffectPrefab,
+                typeof(GameObject),
+                false);
+
+        if (newEffect != clip.EffectPrefab)
+        {
+            clip.EffectPrefab =
+                newEffect;
+
+            RefreshClip(
+                clip);
+
+            GUI.changed = true;
+        }
+
+
+        // -----------------------------------------------------
+        // Attach Bone
+        // -----------------------------------------------------
+
+        string newAttachBone =
+            EditorGUILayout.TextField(
+                "Attach Bone",
+                clip.AttachBone);
+
+        if (newAttachBone != clip.AttachBone)
+        {
+            clip.AttachBone =
+                newAttachBone;
+
+            GUI.changed = true;
+        }
+
+
+        // -----------------------------------------------------
+        // Local Offset
+        // -----------------------------------------------------
+
+        Vector3 newLocalOffset =
+            EditorGUILayout.Vector3Field(
+                "Local Offset",
+                clip.LocalOffset);
+
+        if (newLocalOffset != clip.LocalOffset)
+        {
+            clip.LocalOffset =
+                newLocalOffset;
+
+            GUI.changed = true;
+        }
+    }
+
+
+    // =========================================================
+    // Hitbox / Behitbox Clip
+    // =========================================================
+
+    private void DrawHitboxClip(
+        HitboxClipData clip)
+    {
+        if (clip == null)
+        {
+            return;
+        }
+
+        GameObject newHitbox =
+            (GameObject)EditorGUILayout.ObjectField(
+                "Hitbox",
+                clip.HitboxPrefab,
+                typeof(GameObject),
+                false);
+
+        if (newHitbox != clip.HitboxPrefab)
+        {
+            clip.HitboxPrefab =
+                newHitbox;
+
+            RefreshClip(
+                clip);
+
+            GUI.changed = true;
+        }
+
+
+        // -----------------------------------------------------
+        // Attach Bone
+        // -----------------------------------------------------
+
+        string newAttachBone =
+            EditorGUILayout.TextField(
+                "Attach Bone",
+                clip.AttachBone);
+
+        if (newAttachBone != clip.AttachBone)
+        {
+            clip.AttachBone =
+                newAttachBone;
+
+            GUI.changed = true;
+        }
+
+
+        // -----------------------------------------------------
+        // Local Offset
+        // -----------------------------------------------------
+
+        Vector3 newLocalOffset =
+            EditorGUILayout.Vector3Field(
+                "Local Offset",
+                clip.LocalOffset);
+
+        if (newLocalOffset != clip.LocalOffset)
+        {
+            clip.LocalOffset =
+                newLocalOffset;
+
+            GUI.changed = true;
+        }
+    }
+
+
+    // =========================================================
     // Add Clip Button
     // =========================================================
 
@@ -590,10 +749,34 @@ public class ActionDataEditor : Editor
             buttonText =
                 "+ Add Animation Clip";
         }
-        else
+        else if (track.ClipType ==
+                 ClipType.Voice)
         {
             buttonText =
                 "+ Add Voice Clip";
+        }
+        else if (track.ClipType ==
+                 ClipType.Effect)
+        {
+            buttonText =
+                "+ Add Effect Clip";
+        }
+        else if (track.ClipType ==
+                 ClipType.Hitbox)
+        {
+            buttonText =
+                "+ Add Hitbox Clip";
+        }
+        else if (track.ClipType ==
+                 ClipType.Behitbox)
+        {
+            buttonText =
+                "+ Add Behitbox Clip";
+        }
+        else
+        {
+            buttonText =
+                "+ Add Clip";
         }
 
 
@@ -606,7 +789,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // 确保 List 存在
+        // ??? List ????
         // -----------------------------------------------------
 
         if (track.Clips == null)
@@ -617,9 +800,9 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // 关键：
-        // 直接创建正确的具体类型
-        // 不再使用 SerializeReference InsertArrayElement
+        // ?????
+        // ??????????????????
+        // ??????? SerializeReference InsertArrayElement
         // -----------------------------------------------------
 
         BaseClipData newClip = null;
@@ -636,6 +819,24 @@ public class ActionDataEditor : Editor
             newClip =
                 new VoiceClipData();
         }
+        else if (track.ClipType ==
+                 ClipType.Effect)
+        {
+            newClip =
+                new EffectClipData();
+        }
+        else if (track.ClipType ==
+                 ClipType.Hitbox)
+        {
+            newClip =
+                new HitboxClipData();
+        }
+        else if (track.ClipType ==
+                 ClipType.Behitbox)
+        {
+            newClip =
+                new BehitboxClipData();
+        }
 
 
         if (newClip == null)
@@ -645,7 +846,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // 默认值
+        // ????
         // -----------------------------------------------------
 
         newClip.StartTime =
@@ -659,7 +860,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // 添加
+        // ????
         // -----------------------------------------------------
 
         track.Clips.Add(
@@ -701,6 +902,33 @@ public class ActionDataEditor : Editor
         {
             AddTrack(
                 ClipType.Voice);
+        }
+
+
+        if (GUILayout.Button(
+                "Effect Track",
+                GUILayout.Height(26)))
+        {
+            AddTrack(
+                ClipType.Effect);
+        }
+
+
+        if (GUILayout.Button(
+                "Hitbox Track",
+                GUILayout.Height(26)))
+        {
+            AddTrack(
+                ClipType.Hitbox);
+        }
+
+
+        if (GUILayout.Button(
+                "Behitbox Track",
+                GUILayout.Height(26)))
+        {
+            AddTrack(
+                ClipType.Behitbox);
         }
 
 
@@ -765,6 +993,24 @@ public class ActionDataEditor : Editor
         {
             prefix =
                 "Voice Track ";
+        }
+        else if (clipType ==
+                 ClipType.Effect)
+        {
+            prefix =
+                "Effect Track ";
+        }
+        else if (clipType ==
+                 ClipType.Hitbox)
+        {
+            prefix =
+                "Hitbox Track ";
+        }
+        else if (clipType ==
+                 ClipType.Behitbox)
+        {
+            prefix =
+                "Behitbox Track ";
         }
         else
         {
@@ -833,7 +1079,7 @@ public class ActionDataEditor : Editor
         bool confirm =
             EditorUtility.DisplayDialog(
                 "Delete Track",
-                "确定要删除这个 Track 吗？\n其中的所有 Clip 也会被删除。",
+                "?????????? Track ??\n???е????? Clip ????????",
                 "Delete",
                 "Cancel");
 
@@ -883,7 +1129,7 @@ public class ActionDataEditor : Editor
         bool confirm =
             EditorUtility.DisplayDialog(
                 "Delete Clip",
-                "确定要删除这个 Clip 吗？",
+                "?????????? Clip ??",
                 "Delete",
                 "Cancel");
 
@@ -944,6 +1190,20 @@ public class ActionDataEditor : Editor
                     voiceClip.Voice.length;
             }
         }
+        else if (clip is EffectClipData)
+        {
+            EffectClipData effectClip =
+                clip as EffectClipData;
+
+            effectClip.RefreshData();
+        }
+        else if (clip is HitboxClipData)
+        {
+            HitboxClipData hitboxClip =
+                clip as HitboxClipData;
+
+            hitboxClip.RefreshData();
+        }
 
         UpdateClipEndTime(
             clip);
@@ -985,7 +1245,7 @@ public class ActionDataEditor : Editor
 
 
         // =====================================================
-        // 优先使用 Timeline 编辑器配置的名称
+        // ??????? Timeline ?????????????
         // =====================================================
 
         if (!string.IsNullOrEmpty(
@@ -1038,6 +1298,75 @@ public class ActionDataEditor : Editor
 
             return
                 "Voice Clip " +
+                (index + 1);
+        }
+
+
+        // =====================================================
+        // Effect Clip
+        // =====================================================
+
+        if (clip is EffectClipData)
+        {
+            EffectClipData effectClip =
+                clip as EffectClipData;
+
+
+            if (effectClip.EffectPrefab != null)
+            {
+                return
+                    effectClip.EffectPrefab.name;
+            }
+
+
+            return
+                "Effect Clip " +
+                (index + 1);
+        }
+
+
+        // =====================================================
+        // Behitbox Clip（先判断子类）
+        // =====================================================
+
+        if (clip is BehitboxClipData)
+        {
+            BehitboxClipData behitboxClip =
+                clip as BehitboxClipData;
+
+
+            if (behitboxClip.HitboxPrefab != null)
+            {
+                return
+                    behitboxClip.HitboxPrefab.name;
+            }
+
+
+            return
+                "Behitbox Clip " +
+                (index + 1);
+        }
+
+
+        // =====================================================
+        // Hitbox Clip
+        // =====================================================
+
+        if (clip is HitboxClipData)
+        {
+            HitboxClipData hitboxClip =
+                clip as HitboxClipData;
+
+
+            if (hitboxClip.HitboxPrefab != null)
+            {
+                return
+                    hitboxClip.HitboxPrefab.name;
+            }
+
+
+            return
+                "Hitbox Clip " +
                 (index + 1);
         }
 

@@ -1,5 +1,8 @@
 public enum ClipType
 {
     Animation,
-    Voice
+    Voice,
+    Effect,
+    Hitbox,
+    Behitbox
 }

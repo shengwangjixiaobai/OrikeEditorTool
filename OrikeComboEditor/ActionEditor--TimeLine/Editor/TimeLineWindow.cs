@@ -319,6 +319,13 @@ public class TimeLineWindow : EditorWindow
         if (_previewSystem != null)
         {
             _previewSystem.StopPreview();
+
+            // 反注册 SceneView.duringSceneGui
+            // 并销毁预览实例
+            _previewSystem.Dispose();
+
+            _previewSystem =
+                null;
         }
 
         if (_timeLineController != null)

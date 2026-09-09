@@ -207,8 +207,8 @@ public class ClipView : VisualElement
             ClipData,
             additive);
 
-        // Ctrl / Command 点击只处理选择
-        // 不进入移动或缩放
+        // Ctrl / Command ???????????
+        // ???????????????
         if (additive)
         {
             evt.StopPropagation();
@@ -617,6 +617,33 @@ public class ClipView : VisualElement
                 0.4f);
         }
 
+        // Effect Clip
+        if (ClipData is EffectClipData)
+        {
+            return new Color(
+                0.85f,
+                0.45f,
+                0.25f);
+        }
+
+        // Behitbox Clip（先判断子类）
+        if (ClipData is BehitboxClipData)
+        {
+            return new Color(
+                0.65f,
+                0.25f,
+                0.85f);
+        }
+
+        // Hitbox Clip
+        if (ClipData is HitboxClipData)
+        {
+            return new Color(
+                0.95f,
+                0.25f,
+                0.25f);
+        }
+
         // Default
         return new Color(
             0.6f,
@@ -644,7 +671,7 @@ public class ClipView : VisualElement
             return;
         }
 
-        // 优先显示用户自定义名称
+        // ???????????????????
         if (!string.IsNullOrEmpty(
                 ClipData.Name))
         {
@@ -689,6 +716,52 @@ public class ClipView : VisualElement
             {
                 _nameLabel.text =
                     "Voice";
+            }
+
+            return;
+        }
+
+        // Effect
+        if (ClipData is EffectClipData
+            effectClipData)
+        {
+            if (effectClipData.EffectPrefab != null)
+            {
+                _nameLabel.text =
+                    effectClipData
+                        .EffectPrefab
+                        .name;
+            }
+            else
+            {
+                _nameLabel.text =
+                    "Effect";
+            }
+
+            return;
+        }
+
+        // Hitbox / Behitbox
+        // （BehitboxClipData 继承 HitboxClipData，共用此分支）
+        if (ClipData is HitboxClipData
+            hitboxClipData)
+        {
+            string fallback =
+                ClipData is BehitboxClipData
+                    ? "Behitbox"
+                    : "Hitbox";
+
+            if (hitboxClipData.HitboxPrefab != null)
+            {
+                _nameLabel.text =
+                    hitboxClipData
+                        .HitboxPrefab
+                        .name;
+            }
+            else
+            {
+                _nameLabel.text =
+                    fallback;
             }
 
             return;

@@ -13,7 +13,6 @@ public class InspectorView : VisualElement
 
     private VisualElement _content;
 
-
     private TextField _nameField;
 
     private FloatField _startTimeField;
@@ -25,6 +24,8 @@ public class InspectorView : VisualElement
     private ObjectField _animationField;
 
     private ObjectField _voiceField;
+
+    private ObjectField _effectField;
 
 
     private bool _updating;
@@ -241,6 +242,26 @@ public class InspectorView : VisualElement
         }
 
 
+        if (clip
+            is EffectClipData
+                effectClipData)
+        {
+            CreateEffectFields(
+                effectClipData);
+        }
+
+
+        // Hitbox / Behitbox 共用
+        // （BehitboxClipData 继承 HitboxClipData）
+        if (clip
+            is HitboxClipData
+                hitboxClipData)
+        {
+            CreateHitboxFields(
+                hitboxClipData);
+        }
+
+
         _updating =
             false;
     }
@@ -447,7 +468,7 @@ public class InspectorView : VisualElement
         }
 
 
-        // 优先使用自定义名称
+        // ????????????????
         if (!string.IsNullOrEmpty(
                 clip.Name))
         {
@@ -492,6 +513,61 @@ public class InspectorView : VisualElement
             }
 
             return "Voice";
+        }
+
+
+        // =====================================================
+        // Effect
+        // =====================================================
+
+        if (clip
+            is EffectClipData
+                effectClipData)
+        {
+            if (effectClipData.EffectPrefab
+                != null)
+            {
+                return effectClipData
+                    .EffectPrefab
+                    .name;
+            }
+
+            return "Effect";
+        }
+
+
+        // =====================================================
+        // Hitbox / Behitbox
+        // =====================================================
+
+        if (clip
+            is BehitboxClipData
+                behitboxClipData)
+        {
+            if (behitboxClipData.HitboxPrefab
+                != null)
+            {
+                return behitboxClipData
+                    .HitboxPrefab
+                    .name;
+            }
+
+            return "Behitbox";
+        }
+
+        if (clip
+            is HitboxClipData
+                hitboxClipData)
+        {
+            if (hitboxClipData.HitboxPrefab
+                != null)
+            {
+                return hitboxClipData
+                    .HitboxPrefab
+                    .name;
+            }
+
+            return "Hitbox";
         }
 
 
@@ -594,6 +670,216 @@ public class InspectorView : VisualElement
 
 
     // =========================================================
+    // Effect
+    // =========================================================
+
+    private void CreateEffectFields(
+        EffectClipData clip)
+    {
+        _effectField =
+            new ObjectField(
+                "Effect");
+
+        _effectField.objectType =
+            typeof(
+                GameObject);
+
+        _effectField.allowSceneObjects =
+            false;
+
+        _effectField.value =
+            clip.EffectPrefab;
+
+        _effectField.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                GameObject effect =
+                    evt.newValue
+                        as GameObject;
+
+                _controller.SetEffect(
+                    clip,
+                    effect);
+            });
+
+        _content.Add(
+            _effectField);
+
+
+        // =====================================================
+        // Attach Bone
+        // =====================================================
+
+        TextField attachBoneField =
+            new TextField(
+                "Attach Bone");
+
+        attachBoneField.value =
+            clip.AttachBone ?? string.Empty;
+
+        attachBoneField.tooltip =
+            "骨骼名（空 = 角色根）；递归查找角色 Transform 树。" +
+            "例如 RightHand / Head / Spine02";
+
+        attachBoneField.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                _controller.SetEffectAttachBone(
+                    clip,
+                    evt.newValue ?? string.Empty);
+            });
+
+        _content.Add(
+            attachBoneField);
+
+
+        // =====================================================
+        // Local Offset
+        // =====================================================
+
+        Vector3Field localOffsetField =
+            new Vector3Field(
+                "Local Offset");
+
+        localOffsetField.value =
+            clip.LocalOffset;
+
+        localOffsetField.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                _controller.SetEffectLocalOffset(
+                    clip,
+                    evt.newValue);
+            });
+
+        _content.Add(
+            localOffsetField);
+    }
+
+
+    // =========================================================
+    // Hitbox / Behitbox
+    // =========================================================
+
+    private void CreateHitboxFields(
+        HitboxClipData clip)
+    {
+        ObjectField hitboxField =
+            new ObjectField(
+                "Hitbox");
+
+        hitboxField.objectType =
+            typeof(
+                GameObject);
+
+        hitboxField.allowSceneObjects =
+            false;
+
+        hitboxField.value =
+            clip.HitboxPrefab;
+
+        hitboxField.tooltip =
+            "挂载 Hitbox 脚本 + Collider 的 GameObject。" +
+            "编辑器预览在时间段内 activate=true 并 collider.enabled=true；" +
+            "游戏中 collider 始终 enabled，由 activate 决定生效。";
+
+        hitboxField.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                GameObject hitbox =
+                    evt.newValue
+                        as GameObject;
+
+                _controller.SetHitbox(
+                    clip,
+                    hitbox);
+            });
+
+        _content.Add(
+            hitboxField);
+
+
+        // =====================================================
+        // Attach Bone
+        // =====================================================
+
+        TextField attachBoneField =
+            new TextField(
+                "Attach Bone");
+
+        attachBoneField.value =
+            clip.AttachBone ?? string.Empty;
+
+        attachBoneField.tooltip =
+            "骨骼名（空 = 角色根）；递归查找角色 Transform 树。";
+
+        attachBoneField.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                _controller.SetHitboxAttachBone(
+                    clip,
+                    evt.newValue ?? string.Empty);
+            });
+
+        _content.Add(
+            attachBoneField);
+
+
+        // =====================================================
+        // Local Offset
+        // =====================================================
+
+        Vector3Field localOffsetField =
+            new Vector3Field(
+                "Local Offset");
+
+        localOffsetField.value =
+            clip.LocalOffset;
+
+        localOffsetField.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                _controller.SetHitboxLocalOffset(
+                    clip,
+                    evt.newValue);
+            });
+
+        _content.Add(
+            localOffsetField);
+    }
+
+
+    // =========================================================
     // Selection
     // =========================================================
 
@@ -621,23 +907,72 @@ public class InspectorView : VisualElement
 
 
         // =====================================================
-        // 如果当前正在编辑 Name
-        // 不重新创建 Inspector
+        // ??????????? Name
+        // ????????? Inspector
         //
-        // 防止 TextField 输入过程中丢失焦点
+        // ??? TextField ????????ж??????
         // =====================================================
 
-        if (_nameField != null &&
-            _nameField.panel != null &&
-            _nameField.focusController != null &&
-            _nameField.focusController.focusedElement ==
-            _nameField)
+        if (IsAnyInputFieldFocused())
         {
             return;
         }
 
 
         Refresh();
+    }
+
+
+    // =========================================================
+    // Is Any Input Field Focused
+    //
+    // 检查当前聚焦的元素是否是输入字段
+    // （TextField / Vector3Field / ObjectField 及其子元素）
+    // 通过向上遍历父节点判断
+    //
+    // 如果正在编辑任意输入字段，不刷新 Inspector
+    // 否则字段会被 Refresh 重建导致失去焦点
+    // =========================================================
+
+    private bool IsAnyInputFieldFocused()
+    {
+        if (_content == null ||
+            _content.panel == null ||
+            _content.panel.focusController == null)
+        {
+            return false;
+        }
+
+        var focused =
+            _content
+                .panel
+                .focusController
+                .focusedElement;
+
+        // focusedElement 类型是 Focusable
+        // parent 属性只有 VisualElement 才有
+        VisualElement e =
+            focused as VisualElement;
+
+        if (e == null)
+        {
+            return false;
+        }
+
+        while (e != null &&
+               e != _content)
+        {
+            if (e is TextField ||
+                e is Vector3Field ||
+                e is ObjectField)
+            {
+                return true;
+            }
+
+            e = e.parent;
+        }
+
+        return false;
     }
 
 
@@ -661,6 +996,30 @@ public class InspectorView : VisualElement
         {
             return
                 "Voice Clip";
+        }
+
+
+        if (clip
+            is EffectClipData)
+        {
+            return
+                "Effect Clip";
+        }
+
+
+        if (clip
+            is BehitboxClipData)
+        {
+            return
+                "Behitbox Clip";
+        }
+
+
+        if (clip
+            is HitboxClipData)
+        {
+            return
+                "Hitbox Clip";
         }
 
 

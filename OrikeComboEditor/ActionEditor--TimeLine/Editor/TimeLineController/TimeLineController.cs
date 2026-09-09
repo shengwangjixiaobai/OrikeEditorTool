@@ -586,6 +586,27 @@ public class TimeLineController
     }
 
 
+    public TrackData AddEffectTrack()
+    {
+        return AddTrack(
+            ClipType.Effect);
+    }
+
+
+    public TrackData AddHitboxTrack()
+    {
+        return AddTrack(
+            ClipType.Hitbox);
+    }
+
+
+    public TrackData AddBehitboxTrack()
+    {
+        return AddTrack(
+            ClipType.Behitbox);
+    }
+
+
     // =========================================================
     // Delete Track
     // =========================================================
@@ -668,10 +689,36 @@ public class TimeLineController
     private string GetNewTrackName(
         ClipType clipType)
     {
-        string prefix =
-            clipType == ClipType.Voice
-                ? "Voice Track "
-                : "Animation Track ";
+        string prefix;
+
+        if (clipType == ClipType.Voice)
+        {
+            prefix =
+                "Voice Track ";
+        }
+        else if (clipType ==
+                 ClipType.Effect)
+        {
+            prefix =
+                "Effect Track ";
+        }
+        else if (clipType ==
+                 ClipType.Hitbox)
+        {
+            prefix =
+                "Hitbox Track ";
+        }
+        else if (clipType ==
+                 ClipType.Behitbox)
+        {
+            prefix =
+                "Behitbox Track ";
+        }
+        else
+        {
+            prefix =
+                "Animation Track ";
+        }
 
         int index = 1;
 
@@ -894,6 +941,232 @@ public class TimeLineController
 
 
     // =========================================================
+    // Add Effect Clip
+    // =========================================================
+
+    public EffectClipData AddEffectClip(
+        TrackData trackData,
+        GameObject effectPrefab,
+        float startTime)
+    {
+        if (trackData == null)
+        {
+            return null;
+        }
+
+        if (effectPrefab == null)
+        {
+            return null;
+        }
+
+        if (!trackData.CanAcceptClip(
+                ClipType.Effect))
+        {
+            return null;
+        }
+
+        if (trackData.Clips == null)
+        {
+            trackData.Clips =
+                new List<BaseClipData>();
+        }
+
+        EffectClipData clip =
+            new EffectClipData();
+
+        clip.EffectPrefab =
+            effectPrefab;
+
+        clip.StartTime =
+            Mathf.Max(
+                0f,
+                startTime);
+
+        clip.RefreshData();
+
+        // 没有 ParticleSystem 时
+        // RefreshData 会给 1f 默认长度
+        if (clip.Length <= 0f)
+        {
+            clip.Length = 1f;
+        }
+
+        clip.EndTime =
+            clip.StartTime +
+            clip.Length;
+
+        trackData.Clips.Add(
+            clip);
+
+        _selectedClips.Clear();
+
+        _selectedClips.Add(
+            clip);
+
+        SelectedClip =
+            clip;
+
+        MarkDirty();
+
+        OnSelectionChanged?.Invoke(
+            clip);
+
+        OnMultiSelectionChanged?.Invoke(
+            _selectedClips);
+
+        OnStructureChanged?.Invoke();
+
+        return clip;
+    }
+
+
+    // =========================================================
+    // Add Hitbox Clip
+    // =========================================================
+
+    public HitboxClipData AddHitboxClip(
+        TrackData trackData,
+        GameObject hitboxPrefab,
+        float startTime)
+    {
+        if (trackData == null)
+        {
+            return null;
+        }
+
+        if (hitboxPrefab == null)
+        {
+            return null;
+        }
+
+        if (!trackData.CanAcceptClip(
+                ClipType.Hitbox))
+        {
+            return null;
+        }
+
+        if (trackData.Clips == null)
+        {
+            trackData.Clips =
+                new List<BaseClipData>();
+        }
+
+        HitboxClipData clip =
+            new HitboxClipData();
+
+        clip.HitboxPrefab =
+            hitboxPrefab;
+
+        clip.StartTime =
+            Mathf.Max(
+                0f,
+                startTime);
+
+        clip.RefreshData();
+
+        clip.EndTime =
+            clip.StartTime +
+            clip.Length;
+
+        trackData.Clips.Add(
+            clip);
+
+        _selectedClips.Clear();
+
+        _selectedClips.Add(
+            clip);
+
+        SelectedClip =
+            clip;
+
+        MarkDirty();
+
+        OnSelectionChanged?.Invoke(
+            clip);
+
+        OnMultiSelectionChanged?.Invoke(
+            _selectedClips);
+
+        OnStructureChanged?.Invoke();
+
+        return clip;
+    }
+
+
+    // =========================================================
+    // Add Behitbox Clip
+    // =========================================================
+
+    public BehitboxClipData AddBehitboxClip(
+        TrackData trackData,
+        GameObject hitboxPrefab,
+        float startTime)
+    {
+        if (trackData == null)
+        {
+            return null;
+        }
+
+        if (hitboxPrefab == null)
+        {
+            return null;
+        }
+
+        if (!trackData.CanAcceptClip(
+                ClipType.Behitbox))
+        {
+            return null;
+        }
+
+        if (trackData.Clips == null)
+        {
+            trackData.Clips =
+                new List<BaseClipData>();
+        }
+
+        BehitboxClipData clip =
+            new BehitboxClipData();
+
+        clip.HitboxPrefab =
+            hitboxPrefab;
+
+        clip.StartTime =
+            Mathf.Max(
+                0f,
+                startTime);
+
+        clip.RefreshData();
+
+        clip.EndTime =
+            clip.StartTime +
+            clip.Length;
+
+        trackData.Clips.Add(
+            clip);
+
+        _selectedClips.Clear();
+
+        _selectedClips.Add(
+            clip);
+
+        SelectedClip =
+            clip;
+
+        MarkDirty();
+
+        OnSelectionChanged?.Invoke(
+            clip);
+
+        OnMultiSelectionChanged?.Invoke(
+            _selectedClips);
+
+        OnStructureChanged?.Invoke();
+
+        return clip;
+    }
+
+
+    // =========================================================
     // Find Track
     // =========================================================
 
@@ -1042,6 +1315,119 @@ public class TimeLineController
     }
 
 
+    public void SetEffect(
+        EffectClipData clipData,
+        GameObject effectPrefab)
+    {
+        if (clipData == null)
+        {
+            return;
+        }
+
+        clipData.EffectPrefab =
+            effectPrefab;
+
+        clipData.RefreshData();
+
+        NotifyClipChanged(
+            clipData);
+    }
+
+
+    public void SetEffectAttachBone(
+        EffectClipData clipData,
+        string attachBone)
+    {
+        if (clipData == null)
+        {
+            return;
+        }
+
+        clipData.AttachBone =
+            attachBone ?? string.Empty;
+
+        NotifyClipChanged(
+            clipData);
+    }
+
+
+    public void SetEffectLocalOffset(
+        EffectClipData clipData,
+        Vector3 localOffset)
+    {
+        if (clipData == null)
+        {
+            return;
+        }
+
+        clipData.LocalOffset =
+            localOffset;
+
+        NotifyClipChanged(
+            clipData);
+    }
+
+
+    // =========================================================
+    // Hitbox / Behitbox Set
+    //
+    // HitboxClipData 是 BehitboxClipData 的基类
+    // 所以这些方法对两种类型都适用
+    // =========================================================
+
+    public void SetHitbox(
+        HitboxClipData clipData,
+        GameObject hitboxPrefab)
+    {
+        if (clipData == null)
+        {
+            return;
+        }
+
+        clipData.HitboxPrefab =
+            hitboxPrefab;
+
+        clipData.RefreshData();
+
+        NotifyClipChanged(
+            clipData);
+    }
+
+
+    public void SetHitboxAttachBone(
+        HitboxClipData clipData,
+        string attachBone)
+    {
+        if (clipData == null)
+        {
+            return;
+        }
+
+        clipData.AttachBone =
+            attachBone ?? string.Empty;
+
+        NotifyClipChanged(
+            clipData);
+    }
+
+
+    public void SetHitboxLocalOffset(
+        HitboxClipData clipData,
+        Vector3 localOffset)
+    {
+        if (clipData == null)
+        {
+            return;
+        }
+
+        clipData.LocalOffset =
+            localOffset;
+
+        NotifyClipChanged(
+            clipData);
+    }
+
+
     public void SetClipName(
         BaseClipData clipData,
         string clipName)
@@ -1141,6 +1527,22 @@ public class TimeLineController
             }
         }
 
+        // Effect 没有原生最大长度概念
+        // 由用户在 Inspector 里自由调整
+        if (clipData
+            is EffectClipData)
+        {
+            return float.MaxValue;
+        }
+
+        // Hitbox / Behitbox
+        // 由用户在 Inspector 里自由调整
+        if (clipData
+            is HitboxClipData)
+        {
+            return float.MaxValue;
+        }
+
         return float.MaxValue;
     }
 
@@ -1203,6 +1605,94 @@ public class TimeLineController
 
             clone.EndTime =
                 voiceClipData.EndTime;
+
+            return clone;
+        }
+
+        if (source
+            is EffectClipData
+                effectClipData)
+        {
+            EffectClipData clone =
+                new EffectClipData();
+
+            clone.Name =
+                source.Name;
+
+            clone.EffectPrefab =
+                effectClipData.EffectPrefab;
+
+            clone.StartTime =
+                effectClipData.StartTime;
+
+            clone.Length =
+                effectClipData.Length;
+
+            clone.EndTime =
+                effectClipData.EndTime;
+
+            return clone;
+        }
+
+        // Behitbox 先判断（HitboxClipData 的子类）
+        if (source
+            is BehitboxClipData
+                behitboxClipData)
+        {
+            BehitboxClipData clone =
+                new BehitboxClipData();
+
+            clone.Name =
+                source.Name;
+
+            clone.HitboxPrefab =
+                behitboxClipData.HitboxPrefab;
+
+            clone.AttachBone =
+                behitboxClipData.AttachBone;
+
+            clone.LocalOffset =
+                behitboxClipData.LocalOffset;
+
+            clone.StartTime =
+                behitboxClipData.StartTime;
+
+            clone.Length =
+                behitboxClipData.Length;
+
+            clone.EndTime =
+                behitboxClipData.EndTime;
+
+            return clone;
+        }
+
+        if (source
+            is HitboxClipData
+                hitboxClipData)
+        {
+            HitboxClipData clone =
+                new HitboxClipData();
+
+            clone.Name =
+                source.Name;
+
+            clone.HitboxPrefab =
+                hitboxClipData.HitboxPrefab;
+
+            clone.AttachBone =
+                hitboxClipData.AttachBone;
+
+            clone.LocalOffset =
+                hitboxClipData.LocalOffset;
+
+            clone.StartTime =
+                hitboxClipData.StartTime;
+
+            clone.Length =
+                hitboxClipData.Length;
+
+            clone.EndTime =
+                hitboxClipData.EndTime;
 
             return clone;
         }
@@ -1442,8 +1932,7 @@ public class TimeLineController
             return;
         }
 
-        // Ctrl / Command：
-        // 正常进行增加选择
+        // Ctrl / Command 多选
         if (additive)
         {
             SelectClip(
@@ -1453,46 +1942,9 @@ public class TimeLineController
             return;
         }
 
-        // 没有任何选择：
-        // 直接选择
-        if (_selectedClips.Count == 0)
-        {
-            SelectClip(
-                clipData,
-                false);
-
-            return;
-        }
-
-        // 已经选中的 Clip：
-        // 保持当前多选
-        if (_selectedClips.Contains(
-                clipData))
-        {
-            SelectedClip =
-                clipData;
-
-            OnSelectionChanged?.Invoke(
-                SelectedClip);
-
-            OnMultiSelectionChanged?.Invoke(
-                _selectedClips);
-
-            return;
-        }
-
-        // 已经存在多选时，
-        // 普通点击另一个 Clip 也加入选择
-        _selectedClips.Add(
-            clipData);
-
-        SelectedClip =
-            clipData;
-
-        OnSelectionChanged?.Invoke(
-            SelectedClip);
-
-        OnMultiSelectionChanged?.Invoke(
-            _selectedClips);
+        // 普通单击：清空之前的选中，只选中当前 clip
+        SelectClip(
+            clipData,
+            false);
     }
 }
