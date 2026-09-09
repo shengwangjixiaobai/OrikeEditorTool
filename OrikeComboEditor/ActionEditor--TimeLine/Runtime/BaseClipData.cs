@@ -1,3 +1,4 @@
+
 using System;
 using UnityEngine;
 
@@ -9,6 +10,17 @@ public abstract class BaseClipData
     public float EndTime;
 
     public float Length;
+
+    public string Name;
+
+
+    /// <summary>
+    /// 当前 Clip 的类型
+    /// </summary>
+    public abstract ClipType Type
+    {
+        get;
+    }
 
 
     /// <summary>
@@ -40,4 +52,3 @@ public abstract class BaseClipData
         GetPreviewDataAtTime(
             float actionTime);
 }
-

@@ -1,18 +1,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ActionData
-    : ScriptableObject
+[CreateAssetMenu(
+    fileName = "ActionData",
+    menuName = "Orike/Action Data")]
+public class ActionData : ScriptableObject
 {
     public List<TrackData> Tracks =
         new List<TrackData>();
-
 
     public void RefreshData()
     {
         if (Tracks == null)
         {
-            return;
+            Tracks =
+                new List<TrackData>();
         }
 
         foreach (

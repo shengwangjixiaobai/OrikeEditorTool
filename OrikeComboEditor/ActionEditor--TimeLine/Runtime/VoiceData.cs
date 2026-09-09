@@ -2,52 +2,36 @@ using System;
 using UnityEngine;
 
 [Serializable]
-public class AnimationClipData
-    : BaseClipData
+public class VoiceClipData : BaseClipData
 {
-    public AnimationClip Animation;
+    public AudioClip Voice;
 
-
-    /// <summary>
-    /// 当前 Clip 类型
-    /// </summary>
     public override ClipType Type
     {
         get
         {
-            return ClipType.Animation;
+            return ClipType.Voice;
         }
     }
 
-
-    /// <summary>
-    /// 刷新 Animation 数据
-    /// </summary>
     public override void RefreshData()
     {
-        if (Animation == null)
+        if (Voice == null)
         {
             Length = 0f;
-
             EndTime = StartTime;
-
             return;
         }
 
-        Length =
-            Animation.length;
-
-        EndTime =
-            StartTime +
-            Length;
+        Length = Voice.length;
+        EndTime = StartTime + Length;
     }
-
 
     public override BasePreviewData
         GetPreviewDataAtTime(
             float actionTime)
     {
-        if (Animation == null)
+        if (Voice == null)
         {
             return null;
         }
@@ -58,17 +42,16 @@ public class AnimationClipData
         }
 
         float localTime =
-            actionTime -
-            StartTime;
+            actionTime - StartTime;
 
         localTime =
             Mathf.Clamp(
                 localTime,
                 0f,
-                Animation.length);
+                Voice.length);
 
-        return new AnimationPreviewData(
-            Animation,
+        return new VoicePreviewData(
+            Voice,
             localTime);
     }
 }

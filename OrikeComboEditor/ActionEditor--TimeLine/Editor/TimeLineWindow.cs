@@ -282,6 +282,13 @@ public class TimeLineWindow : EditorWindow
     }
 
 
+    private void OnEnable()
+    {
+        EditorApplication.update -= OnEditorUpdate;
+        EditorApplication.update += OnEditorUpdate;
+    }
+
+
     // =========================================================
     // Create GUI
     // =========================================================
@@ -293,7 +300,7 @@ public class TimeLineWindow : EditorWindow
         StyleSheet styleSheet =
             AssetDatabase.LoadAssetAtPath<
                 StyleSheet>(
-                    "Assets/GameLogic/OrikeScript/OrikeComboEditor/ActionEditor--TimeLine/TimeLineWindow.uss");
+                    "Assets/GameLogic/OrikeScript/OrikeComboEditor/ActionEditor--TimeLine/Editor/TimeLineWindow.uss");
 
         if (styleSheet != null)
         {
@@ -306,6 +313,13 @@ public class TimeLineWindow : EditorWindow
     private void OnDisable()
     {
         StopPlayback();
+
+        EditorApplication.update -= OnEditorUpdate;
+
+        if (_previewSystem != null)
+        {
+            _previewSystem.StopPreview();
+        }
 
         if (_timeLineController != null)
         {
@@ -2223,7 +2237,9 @@ public class TimeLineWindow : EditorWindow
         }
 
         _previewSystem.Preview(
-            CurrentTime);
+            CurrentTime,
+            CurrentFrameRate,
+            _isPlaying);
     }
 
 
@@ -2266,9 +2282,6 @@ public class TimeLineWindow : EditorWindow
             EditorApplication
                 .timeSinceStartup;
 
-        EditorApplication.update +=
-            OnEditorPlaybackUpdate;
-
         UpdatePlayButtonText();
     }
 
@@ -2277,10 +2290,33 @@ public class TimeLineWindow : EditorWindow
     {
         _isPlaying = false;
 
-        EditorApplication.update -=
-            OnEditorPlaybackUpdate;
+        if (_previewSystem != null)
+        {
+            _previewSystem.StopPreview();
+        }
 
         UpdatePlayButtonText();
+    }
+
+
+    private void OnEditorUpdate()
+    {
+        // Voice 的“一帧播放”依靠持续的 Editor Update
+        // 自动检测是否已经到达停止时间。
+        if (_previewSystem != null)
+        {
+            _previewSystem.Update();
+        }
+
+        if (_isPlaying)
+        {
+            OnEditorPlaybackUpdate();
+        }
+
+        if (_isPlaying || _previewSystem != null)
+        {
+            Repaint();
+        }
     }
 
 
@@ -2372,6 +2408,7 @@ public class TimeLineWindow : EditorWindow
             _actionView = null;
         }
 
+
         if (_timeLineController != null)
         {
             _timeLineController.OnStructureChanged -=
@@ -2382,6 +2419,7 @@ public class TimeLineWindow : EditorWindow
             _timeLineController = null;
         }
 
+
         ActionData actionData =
             GetCurrentActionData();
 
@@ -2390,35 +2428,22 @@ public class TimeLineWindow : EditorWindow
             if (_inspectorView != null)
             {
                 _inspectorView.RemoveFromHierarchy();
-
-                _inspectorView =
-                    new InspectorView(
-                        null);
-
-                _root.Add(
-                    _inspectorView);
+                _inspectorView = null;
             }
 
             return;
         }
 
 
-        // -----------------------------------------------------
-        // Controller
-        // -----------------------------------------------------
-
         _timeLineController =
             new TimeLineController(
                 actionData,
                 CurrentFrameRate);
 
+
         _timeLineController.OnStructureChanged +=
             RebuildActionView;
 
-
-        // -----------------------------------------------------
-        // Action View
-        // -----------------------------------------------------
 
         _actionView =
             new ActionView(
@@ -2427,39 +2452,22 @@ public class TimeLineWindow : EditorWindow
                 PixelPerFrame,
                 _timeLineController);
 
+
         _trackNameArea.Add(
             _actionView.LeftElement);
+
 
         _timelineTrackArea.Add(
             _actionView.RightElement);
 
 
-        // -----------------------------------------------------
-        // Inspector
-        // -----------------------------------------------------
-
         if (_inspectorView != null)
         {
             _inspectorView.RemoveFromHierarchy();
+            _inspectorView = null;
         }
 
-        _inspectorView =
-            new InspectorView(
-                _timeLineController);
 
-        _inspectorView.style.width =
-            InspectorWidth;
-
-        _inspectorView.style.minWidth =
-            240;
-
-        _inspectorView.style.maxWidth =
-            360;
-
-        _inspectorView.style.flexShrink =
-            0;
-
-        _root.Add(
-            _inspectorView);
+        CreateInspectorPanel();
     }
 }

@@ -1,7 +1,8 @@
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using ObjectField = UnityEditor.UIElements.ObjectField;
+using ObjectField =
+    UnityEditor.UIElements.ObjectField;
 
 public class InspectorView : VisualElement
 {
@@ -12,10 +13,14 @@ public class InspectorView : VisualElement
     private VisualElement _content;
 
     private FloatField _startTimeField;
+
     private FloatField _lengthField;
+
     private FloatField _endTimeField;
 
     private ObjectField _animationField;
+
+    private ObjectField _voiceField;
 
     private bool _updating;
 
@@ -98,7 +103,8 @@ public class InspectorView : VisualElement
                 0.08f);
 
         _titleLabel =
-            new Label("Inspector");
+            new Label(
+                "Inspector");
 
         _titleLabel.style.fontSize =
             12;
@@ -192,11 +198,22 @@ public class InspectorView : VisualElement
         CreateCommonFields(
             clip);
 
+
         if (clip
-            is AnimationClipData animationClipData)
+            is AnimationClipData
+                animationClipData)
         {
             CreateAnimationFields(
                 animationClipData);
+        }
+
+
+        if (clip
+            is VoiceClipData
+                voiceClipData)
+        {
+            CreateVoiceFields(
+                voiceClipData);
         }
 
         _updating = false;
@@ -289,7 +306,7 @@ public class InspectorView : VisualElement
 
 
     // =========================================================
-    // Animation Fields
+    // Animation
     // =========================================================
 
     private void CreateAnimationFields(
@@ -331,6 +348,48 @@ public class InspectorView : VisualElement
 
 
     // =========================================================
+    // Voice
+    // =========================================================
+
+    private void CreateVoiceFields(
+        VoiceClipData clip)
+    {
+        _voiceField =
+            new ObjectField(
+                "Voice");
+
+        _voiceField.objectType =
+            typeof(AudioClip);
+
+        _voiceField.allowSceneObjects =
+            false;
+
+        _voiceField.value =
+            clip.Voice;
+
+        _voiceField.RegisterValueChangedCallback(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                AudioClip voice =
+                    evt.newValue
+                        as AudioClip;
+
+                _controller.SetVoice(
+                    clip,
+                    voice);
+            });
+
+        _content.Add(
+            _voiceField);
+    }
+
+
+    // =========================================================
     // Selection
     // =========================================================
 
@@ -363,6 +422,12 @@ public class InspectorView : VisualElement
             is AnimationClipData)
         {
             return "Animation Clip";
+        }
+
+        if (clip
+            is VoiceClipData)
+        {
+            return "Voice Clip";
         }
 
         return clip.GetType().Name;

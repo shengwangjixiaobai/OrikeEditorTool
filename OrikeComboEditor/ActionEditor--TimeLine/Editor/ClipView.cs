@@ -8,19 +8,25 @@ public class ClipView : VisualElement
 
     private const float ResizeEdgeWidth = 6f;
 
+
     private enum EditMode
     {
         None,
+
         Move,
+
         ResizeLeft,
+
         ResizeRight
     }
+
 
     protected BaseClipData ClipData;
 
     private readonly TimeLineController _controller;
 
     private readonly float _fps;
+
     private readonly float _frameWidth;
 
     private Label _nameLabel;
@@ -45,13 +51,17 @@ public class ClipView : VisualElement
         float frameWidth,
         TimeLineController controller)
     {
-        ClipData = clipData;
+        ClipData =
+            clipData;
 
-        _fps = fps;
+        _fps =
+            fps;
 
-        _frameWidth = frameWidth;
+        _frameWidth =
+            frameWidth;
 
-        _controller = controller;
+        _controller =
+            controller;
 
         style.position =
             Position.Absolute;
@@ -70,7 +80,7 @@ public class ClipView : VisualElement
 
 
     // =========================================================
-    // Visual
+    // Create Visual
     // =========================================================
 
     private void CreateVisual()
@@ -116,7 +126,7 @@ public class ClipView : VisualElement
 
 
     // =========================================================
-    // Events
+    // Register Events
     // =========================================================
 
     private void RegisterEvents()
@@ -157,9 +167,9 @@ public class ClipView : VisualElement
     private void OnPointerDown(
         PointerDownEvent evt)
     {
-        // -----------------------------------------------------
+        // =====================================================
         // Right Click
-        // -----------------------------------------------------
+        // =====================================================
 
         if (evt.button == 1)
         {
@@ -180,9 +190,9 @@ public class ClipView : VisualElement
         }
 
 
-        // -----------------------------------------------------
+        // =====================================================
         // Left Click
-        // -----------------------------------------------------
+        // =====================================================
 
         if (evt.button != 0)
         {
@@ -193,14 +203,16 @@ public class ClipView : VisualElement
             evt.ctrlKey ||
             evt.commandKey;
 
-        _controller.SelectClip(
+        _controller.SelectClipFromPointer(
             ClipData,
             additive);
 
-        // 多选时不进入移动/缩放
+        // Ctrl / Command 点击只处理选择，
+        // 不进入移动或缩放。
         if (additive)
         {
             evt.StopPropagation();
+
             return;
         }
 
@@ -235,7 +247,8 @@ public class ClipView : VisualElement
             new GenericMenu();
 
         menu.AddItem(
-            new GUIContent("Copy"),
+            new GUIContent(
+                "Copy"),
             false,
             () =>
             {
@@ -243,7 +256,8 @@ public class ClipView : VisualElement
             });
 
         menu.AddItem(
-            new GUIContent("Paste"),
+            new GUIContent(
+                "Paste"),
             _controller.HasClipboard,
             () =>
             {
@@ -261,10 +275,12 @@ public class ClipView : VisualElement
                     ClipData.EndTime);
             });
 
-        menu.AddSeparator("");
+        menu.AddSeparator(
+            "");
 
         menu.AddItem(
-            new GUIContent("Delete"),
+            new GUIContent(
+                "Delete"),
             false,
             () =>
             {
@@ -311,23 +327,25 @@ public class ClipView : VisualElement
         {
             case EditMode.Move:
 
-                _controller.MoveClip(
+                _controller?.MoveSelectedClips(
                     ClipData,
                     deltaTime);
 
                 break;
+
 
             case EditMode.ResizeLeft:
 
-                _controller.ResizeClipLeft(
+                _controller?.ResizeSelectedClipsLeft(
                     ClipData,
                     deltaTime);
 
                 break;
 
+
             case EditMode.ResizeRight:
 
-                _controller.ResizeClipRight(
+                _controller?.ResizeSelectedClipsRight(
                     ClipData,
                     deltaTime);
 
@@ -390,9 +408,14 @@ public class ClipView : VisualElement
     }
 
 
+    // =========================================================
+    // Stop Editing
+    // =========================================================
+
     private void StopEditing()
     {
-        _isEditing = false;
+        _isEditing =
+            false;
 
         _editMode =
             EditMode.None;
@@ -409,13 +432,15 @@ public class ClipView : VisualElement
         float width =
             resolvedStyle.width;
 
-        if (localX <= ResizeEdgeWidth)
+        if (localX <=
+            ResizeEdgeWidth)
         {
             return EditMode.ResizeLeft;
         }
 
         if (localX >=
-            width - ResizeEdgeWidth)
+            width -
+            ResizeEdgeWidth)
         {
             return EditMode.ResizeRight;
         }
@@ -504,9 +529,14 @@ public class ClipView : VisualElement
 
         if (selected)
         {
-            style.borderTopWidth = 2;
-            style.borderLeftWidth = 2;
-            style.borderRightWidth = 2;
+            style.borderTopWidth =
+                2;
+
+            style.borderLeftWidth =
+                2;
+
+            style.borderRightWidth =
+                2;
 
             style.borderTopColor =
                 new Color(
@@ -528,9 +558,14 @@ public class ClipView : VisualElement
         }
         else
         {
-            style.borderTopWidth = 0;
-            style.borderLeftWidth = 0;
-            style.borderRightWidth = 0;
+            style.borderTopWidth =
+                0;
+
+            style.borderLeftWidth =
+                0;
+
+            style.borderRightWidth =
+                0;
         }
     }
 
@@ -547,8 +582,6 @@ public class ClipView : VisualElement
             return;
         }
 
-        UpdateName();
-
         UpdateLayout(
             _fps,
             _frameWidth);
@@ -556,7 +589,7 @@ public class ClipView : VisualElement
 
 
     // =========================================================
-    // Border
+    // Bottom Border Color
     // =========================================================
 
     protected virtual Color GetBottomBorderColor()
@@ -569,18 +602,24 @@ public class ClipView : VisualElement
 
 
     // =========================================================
-    // Name
+    // Update Name
     // =========================================================
 
     private void UpdateName()
     {
-        if (ClipData
-            is AnimationClipData animationClipData)
+        if (
+            ClipData
+            is AnimationClipData
+                animationClipData)
         {
-            if (animationClipData.Animation != null)
+            if (
+                animationClipData.Animation
+                != null)
             {
                 _nameLabel.text =
-                    animationClipData.Animation.name;
+                    animationClipData
+                        .Animation
+                        .name;
             }
             else
             {
@@ -597,7 +636,7 @@ public class ClipView : VisualElement
 
 
     // =========================================================
-    // Layout
+    // Update Layout
     // =========================================================
 
     public virtual void UpdateLayout(
@@ -609,12 +648,18 @@ public class ClipView : VisualElement
             return;
         }
 
+        float startTime =
+            ClipData.StartTime;
+
+        float length =
+            ClipData.Length;
+
         float startFrame =
-            ClipData.StartTime *
+            startTime *
             fps;
 
         float lengthFrame =
-            ClipData.Length *
+            length *
             fps;
 
         float x =
