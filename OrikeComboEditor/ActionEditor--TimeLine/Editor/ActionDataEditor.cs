@@ -976,37 +976,74 @@ public class ActionDataEditor : Editor
         BaseClipData clip,
         int index)
     {
+        if (clip == null)
+        {
+            return
+                "Clip " +
+                (index + 1);
+        }
+
+
+        // =====================================================
+        // 优先使用 Timeline 编辑器配置的名称
+        // =====================================================
+
+        if (!string.IsNullOrEmpty(
+                clip.Name))
+        {
+            return
+                clip.Name;
+        }
+
+
+        // =====================================================
+        // Animation Clip
+        // =====================================================
+
         if (clip is AnimationClipData)
         {
             AnimationClipData animationClip =
                 clip as AnimationClipData;
 
+
             if (animationClip.Animation != null)
             {
-                return animationClip.Animation.name;
+                return
+                    animationClip.Animation.name;
             }
 
-            return "Animation Clip " +
-                   (index + 1);
+
+            return
+                "Animation Clip " +
+                (index + 1);
         }
 
+
+        // =====================================================
+        // Voice Clip
+        // =====================================================
 
         if (clip is VoiceClipData)
         {
             VoiceClipData voiceClip =
                 clip as VoiceClipData;
 
+
             if (voiceClip.Voice != null)
             {
-                return voiceClip.Voice.name;
+                return
+                    voiceClip.Voice.name;
             }
 
-            return "Voice Clip " +
-                   (index + 1);
+
+            return
+                "Voice Clip " +
+                (index + 1);
         }
 
 
-        return "Clip " +
-               (index + 1);
+        return
+            "Clip " +
+            (index + 1);
     }
 }

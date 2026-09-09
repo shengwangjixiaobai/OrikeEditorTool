@@ -15,31 +15,13 @@ MonoBehaviour:
   Tracks:
   - TrackName: "\u52A8\u753B"
     ClipType: 0
-    Clips:
-    - rid: 4637300434490359903
+    Clips: []
   - TrackName: Animation Track 2
     ClipType: 0
     Clips: []
   - TrackName: Voice Track 1
     ClipType: 1
-    Clips:
-    - rid: 4637300434490359914
+    Clips: []
   references:
     version: 2
-    RefIds:
-    - rid: 4637300434490359903
-      type: {class: AnimationClipData, ns: , asm: Assembly-CSharp}
-      data:
-        StartTime: 0
-        EndTime: 0.85
-        Length: 0.85
-        Name: 
-        Animation: {fileID: 7400000, guid: 5a2761a380c0d2c4c83808139d1c00a2, type: 2}
-    - rid: 4637300434490359914
-      type: {class: VoiceClipData, ns: , asm: Assembly-CSharp}
-      data:
-        StartTime: 1.1174439
-        EndTime: 2.329444
-        Length: 1.212
-        Name: 
-        Voice: {fileID: 8300000, guid: 894e00b7603d35748a1caf98331ff0e1, type: 3}
+    RefIds: []

@@ -207,8 +207,8 @@ public class ClipView : VisualElement
             ClipData,
             additive);
 
-        // Ctrl / Command 点击只处理选择，
-        // 不进入移动或缩放。
+        // Ctrl / Command 点击只处理选择
+        // 不进入移动或缩放
         if (additive)
         {
             evt.StopPropagation();
@@ -582,6 +582,11 @@ public class ClipView : VisualElement
             return;
         }
 
+        UpdateName();
+
+        style.borderBottomColor =
+            GetBottomBorderColor();
+
         UpdateLayout(
             _fps,
             _frameWidth);
@@ -594,10 +599,29 @@ public class ClipView : VisualElement
 
     protected virtual Color GetBottomBorderColor()
     {
+        // Animation Clip
+        if (ClipData is AnimationClipData)
+        {
+            return new Color(
+                0.3f,
+                0.6f,
+                1f);
+        }
+
+        // Voice / Audio Clip
+        if (ClipData is VoiceClipData)
+        {
+            return new Color(
+                0.3f,
+                0.85f,
+                0.4f);
+        }
+
+        // Default
         return new Color(
-            0.3f,
             0.6f,
-            1f);
+            0.6f,
+            0.6f);
     }
 
 
@@ -607,14 +631,34 @@ public class ClipView : VisualElement
 
     private void UpdateName()
     {
-        if (
-            ClipData
-            is AnimationClipData
-                animationClipData)
+        if (_nameLabel == null)
         {
-            if (
-                animationClipData.Animation
-                != null)
+            return;
+        }
+
+        if (ClipData == null)
+        {
+            _nameLabel.text =
+                "Clip";
+
+            return;
+        }
+
+        // 优先显示用户自定义名称
+        if (!string.IsNullOrEmpty(
+                ClipData.Name))
+        {
+            _nameLabel.text =
+                ClipData.Name;
+
+            return;
+        }
+
+        // Animation
+        if (ClipData is AnimationClipData
+            animationClipData)
+        {
+            if (animationClipData.Animation != null)
             {
                 _nameLabel.text =
                     animationClipData
@@ -626,12 +670,32 @@ public class ClipView : VisualElement
                 _nameLabel.text =
                     "Animation";
             }
+
+            return;
         }
-        else
+
+        // Voice
+        if (ClipData is VoiceClipData
+            voiceClipData)
         {
-            _nameLabel.text =
-                "Clip";
+            if (voiceClipData.Voice != null)
+            {
+                _nameLabel.text =
+                    voiceClipData
+                        .Voice
+                        .name;
+            }
+            else
+            {
+                _nameLabel.text =
+                    "Voice";
+            }
+
+            return;
         }
+
+        _nameLabel.text =
+            "Clip";
     }
 
 
@@ -678,4 +742,5 @@ public class ClipView : VisualElement
                 width,
                 4f);
     }
+
 }

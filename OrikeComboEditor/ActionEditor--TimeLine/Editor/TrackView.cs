@@ -7,7 +7,8 @@ public class TrackView
 {
     private readonly TimeLineController _controller;
 
-    public const float TrackHeight = 36f;
+    public const float TrackHeight =
+        36f;
 
 
     private readonly TrackData _trackData;
@@ -22,12 +23,26 @@ public class TrackView
     private VisualElement _rightElement;
 
 
+    // =========================================================
+    // Track Name
+    // =========================================================
+
+    private Label _trackNameLabel;
+
+    private TextField _trackNameField;
+
+    private bool _isEditingTrackName;
+
+
     private readonly List<ClipView>
         _clipViews =
             new List<ClipView>();
 
 
+    // =========================================================
     // Animation Picker
+    // =========================================================
+
     private int _objectPickerControlID;
 
     private float _pendingAddTime;
@@ -35,7 +50,10 @@ public class TrackView
     private bool _waitingForAnimationPicker;
 
 
+    // =========================================================
     // Voice Picker
+    // =========================================================
+
     private int _voicePickerControlID;
 
     private bool _waitingForVoicePicker;
@@ -92,6 +110,13 @@ public class TrackView
         BuildClipViews();
 
         RegisterTrackContextMenu();
+
+
+        if (_controller != null)
+        {
+            _controller.OnTrackDataChanged +=
+                OnTrackDataChanged;
+        }
     }
 
 
@@ -138,48 +163,412 @@ public class TrackView
                 0.08f);
 
 
-        Label label =
+        // =====================================================
+        // Track Name Label
+        // =====================================================
+
+        _trackNameLabel =
             new Label();
 
 
-        label.text =
-            string.IsNullOrEmpty(
-                _trackData?.TrackName)
-                ? "Track"
-                : _trackData.TrackName;
+        RefreshTrackName();
 
 
-        label.style.flexGrow =
+        _trackNameLabel.style.flexGrow =
             1;
 
+        _trackNameLabel.style.height =
+            TrackHeight;
 
-        label.style.unityTextAlign =
+        _trackNameLabel.style.unityTextAlign =
             TextAnchor.MiddleLeft;
 
-
-        label.style.paddingLeft =
+        _trackNameLabel.style.paddingLeft =
             6;
 
+        _trackNameLabel.style.paddingRight =
+            28;
 
-        label.style.fontSize =
+        _trackNameLabel.style.fontSize =
             11;
 
-
-        label.style.color =
+        _trackNameLabel.style.color =
             new Color(
                 0.8f,
                 0.8f,
                 0.8f);
 
 
-        label.pickingMode =
-            PickingMode.Ignore;
+        // =====================================================
+        // Double Click Edit
+        // =====================================================
+
+        _trackNameLabel.RegisterCallback<
+            PointerDownEvent>(
+            OnTrackNamePointerDown);
 
 
         _leftElement.Add(
-            label);
+            _trackNameLabel);
+
 
         CreateTrackMenuButton();
+    }
+
+
+    // =========================================================
+    // Track Name Pointer Down
+    // =========================================================
+
+    private void OnTrackNamePointerDown(
+        PointerDownEvent evt)
+    {
+        if (evt.button != 0)
+        {
+            return;
+        }
+
+
+        if (evt.clickCount < 2)
+        {
+            return;
+        }
+
+
+        BeginEditTrackName();
+
+
+        evt.StopPropagation();
+
+        evt.PreventDefault();
+    }
+
+
+    // =========================================================
+    // Begin Edit Track Name
+    // =========================================================
+
+    private void BeginEditTrackName()
+    {
+        if (_isEditingTrackName)
+        {
+            return;
+        }
+
+
+        if (_trackData == null)
+        {
+            return;
+        }
+
+
+        _isEditingTrackName =
+            true;
+
+
+        if (_trackNameField == null)
+        {
+            CreateTrackNameField();
+        }
+
+
+        _trackNameField.SetValueWithoutNotify(
+            _trackData.TrackName);
+
+
+        // 隐藏 Label
+        _trackNameLabel.style.display =
+            DisplayStyle.None;
+
+
+        // 添加 TextField
+        if (_trackNameField.parent !=
+            _leftElement)
+        {
+            _leftElement.Insert(
+                0,
+                _trackNameField);
+        }
+
+
+        _trackNameField.style.display =
+            DisplayStyle.Flex;
+
+
+        // =====================================================
+        // 延迟一帧获取焦点
+        //
+        // 防止 UI Toolkit 刚添加元素时 Focus 失败
+        // =====================================================
+
+        _trackNameField.schedule.Execute(
+            () =>
+            {
+                if (_trackNameField == null)
+                {
+                    return;
+                }
+
+                if (!_isEditingTrackName)
+                {
+                    return;
+                }
+
+
+                _trackNameField.Focus();
+
+                _trackNameField.SelectAll();
+            });
+    }
+
+
+    // =========================================================
+    // Create Track Name Field
+    // =========================================================
+
+    private void CreateTrackNameField()
+    {
+        _trackNameField =
+            new TextField();
+
+
+        _trackNameField.style.position =
+            Position.Absolute;
+
+        _trackNameField.style.left =
+            3;
+
+        _trackNameField.style.right =
+            28;
+
+        _trackNameField.style.top =
+            0;
+
+        _trackNameField.style.height =
+            TrackHeight;
+
+        _trackNameField.style.fontSize =
+            11;
+
+        _trackNameField.style.paddingLeft =
+            6;
+
+
+        _trackNameField.RegisterCallback<
+            KeyDownEvent>(
+            OnTrackNameKeyDown);
+
+
+        _trackNameField.RegisterCallback<
+            FocusOutEvent>(
+            OnTrackNameFocusOut);
+
+
+        // 防止 TextField 的鼠标事件继续影响
+        // Timeline Root
+        _trackNameField.RegisterCallback<
+            PointerDownEvent>(
+            evt =>
+            {
+                evt.StopPropagation();
+            });
+    }
+
+
+    // =========================================================
+    // Track Name Key Down
+    // =========================================================
+
+    private void OnTrackNameKeyDown(
+        KeyDownEvent evt)
+    {
+        if (!_isEditingTrackName)
+        {
+            return;
+        }
+
+
+        // =====================================================
+        // Enter Save
+        // =====================================================
+
+        if (evt.keyCode ==
+                KeyCode.Return ||
+            evt.keyCode ==
+                KeyCode.KeypadEnter)
+        {
+            EndEditTrackName(
+                true);
+
+
+            evt.StopPropagation();
+
+            evt.PreventDefault();
+
+            return;
+        }
+
+
+        // =====================================================
+        // Escape Cancel
+        // =====================================================
+
+        if (evt.keyCode ==
+            KeyCode.Escape)
+        {
+            EndEditTrackName(
+                false);
+
+
+            evt.StopPropagation();
+
+            evt.PreventDefault();
+        }
+    }
+
+
+    // =========================================================
+    // Track Name Focus Out
+    // =========================================================
+
+    private void OnTrackNameFocusOut(
+        FocusOutEvent evt)
+    {
+        if (!_isEditingTrackName)
+        {
+            return;
+        }
+
+
+        EndEditTrackName(
+            true);
+    }
+
+
+    // =========================================================
+    // End Edit Track Name
+    // =========================================================
+
+    private void EndEditTrackName(
+        bool save)
+    {
+        if (!_isEditingTrackName)
+        {
+            return;
+        }
+
+
+        _isEditingTrackName =
+            false;
+
+
+        // =====================================================
+        // Save
+        // =====================================================
+
+        if (save &&
+            _trackData != null &&
+            _trackNameField != null)
+        {
+            string newName =
+                _trackNameField.value;
+
+
+            if (string.IsNullOrWhiteSpace(
+                    newName))
+            {
+                newName =
+                    "Track";
+            }
+
+
+            _controller?.SetTrackName(
+                _trackData,
+                newName);
+        }
+
+
+        // =====================================================
+        // Remove Field
+        // =====================================================
+
+        if (_trackNameField != null)
+        {
+            _trackNameField.Blur();
+
+
+            _trackNameField.style.display =
+                DisplayStyle.None;
+
+
+            if (_trackNameField.parent ==
+                _leftElement)
+            {
+                _leftElement.Remove(
+                    _trackNameField);
+            }
+        }
+
+
+        // =====================================================
+        // Show Label
+        // =====================================================
+
+        if (_trackNameLabel != null)
+        {
+            _trackNameLabel.style.display =
+                DisplayStyle.Flex;
+        }
+
+
+        RefreshTrackName();
+    }
+
+
+    // =========================================================
+    // Refresh Track Name
+    // =========================================================
+
+    private void RefreshTrackName()
+    {
+        if (_trackNameLabel == null)
+        {
+            return;
+        }
+
+
+        if (_trackData == null)
+        {
+            _trackNameLabel.text =
+                "Track";
+
+            return;
+        }
+
+
+        _trackNameLabel.text =
+            string.IsNullOrEmpty(
+                _trackData.TrackName)
+                ? "Track"
+                : _trackData.TrackName;
+    }
+
+
+    // =========================================================
+    // Track Data Changed
+    // =========================================================
+
+    private void OnTrackDataChanged(
+        TrackData trackData)
+    {
+        if (trackData !=
+            _trackData)
+        {
+            return;
+        }
+
+
+        RefreshTrackName();
     }
 
 
@@ -191,6 +580,7 @@ public class TrackView
     {
         VisualElement menuButton =
             new VisualElement();
+
 
         menuButton.style.width =
             24;
@@ -218,7 +608,8 @@ public class TrackView
 
 
         Label dots =
-            new Label("\u22EE");
+            new Label(
+                "\u22EE");
 
         dots.style.fontSize =
             16;
@@ -234,6 +625,7 @@ public class TrackView
 
         dots.pickingMode =
             PickingMode.Ignore;
+
 
         menuButton.Add(
             dots);
@@ -257,9 +649,13 @@ public class TrackView
             return;
         }
 
+
         ShowTrackMenu();
 
+
         evt.StopPropagation();
+
+        evt.PreventDefault();
     }
 
 
@@ -271,8 +667,10 @@ public class TrackView
             return;
         }
 
+
         GenericMenu menu =
             new GenericMenu();
+
 
         menu.AddItem(
             new GUIContent(
@@ -283,6 +681,7 @@ public class TrackView
                 _controller.DeleteTrack(
                     _trackData);
             });
+
 
         menu.ShowAsContext();
     }
@@ -304,6 +703,7 @@ public class TrackView
                 1.0f);
         }
 
+
         if (_trackData != null &&
             _trackData.ClipType ==
             ClipType.Voice)
@@ -313,6 +713,7 @@ public class TrackView
                 0.85f,
                 0.45f);
         }
+
 
         return new Color(
             0.7f,
@@ -334,18 +735,14 @@ public class TrackView
         _rightElement.style.height =
             TrackHeight;
 
-
         _rightElement.style.flexShrink =
             0;
-
 
         _rightElement.style.position =
             Position.Relative;
 
-
         _rightElement.style.overflow =
             Overflow.Hidden;
-
 
         _rightElement.style.backgroundColor =
             new Color(
@@ -356,7 +753,6 @@ public class TrackView
 
         _rightElement.style.borderBottomWidth =
             1;
-
 
         _rightElement.style.borderBottomColor =
             new Color(
@@ -440,15 +836,17 @@ public class TrackView
 
 
         // -----------------------------------------------------
-        // 如果右键点击的是 Clip，
-        // ClipView 自己处理。
+        // 如果右键点击的是 Clip
+        // ClipView 自己处理
         // -----------------------------------------------------
 
         VisualElement picked =
-            evt.target as VisualElement;
+            evt.target
+                as VisualElement;
 
 
-        if (picked != _rightElement)
+        if (picked !=
+            _rightElement)
         {
             return;
         }
@@ -539,7 +937,8 @@ public class TrackView
         }
 
 
-        menu.AddSeparator("");
+        menu.AddSeparator(
+            "");
 
 
         // -----------------------------------------------------
@@ -631,7 +1030,8 @@ public class TrackView
 
 
         AnimationClip animation =
-            selectedObject as AnimationClip;
+            selectedObject
+                as AnimationClip;
 
 
         if (animation != null)
@@ -720,7 +1120,8 @@ public class TrackView
 
 
         AudioClip voice =
-            selectedObject as AudioClip;
+            selectedObject
+                as AudioClip;
 
 
         if (voice != null)
@@ -768,4 +1169,5 @@ public class TrackView
     {
         LayoutClips();
     }
+
 }

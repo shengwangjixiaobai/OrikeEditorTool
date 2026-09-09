@@ -1,8 +1,9 @@
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+
 using ObjectField =
-    UnityEditor.UIElements.ObjectField;
+UnityEditor.UIElements.ObjectField;
 
 public class InspectorView : VisualElement
 {
@@ -11,6 +12,9 @@ public class InspectorView : VisualElement
     private Label _titleLabel;
 
     private VisualElement _content;
+
+
+    private TextField _nameField;
 
     private FloatField _startTimeField;
 
@@ -22,6 +26,7 @@ public class InspectorView : VisualElement
 
     private ObjectField _voiceField;
 
+
     private bool _updating;
 
 
@@ -30,6 +35,7 @@ public class InspectorView : VisualElement
     {
         _controller =
             controller;
+
 
         style.flexDirection =
             FlexDirection.Column;
@@ -52,9 +58,11 @@ public class InspectorView : VisualElement
                 0.16f,
                 0.16f);
 
+
         CreateHeader();
 
         CreateContent();
+
 
         if (_controller != null)
         {
@@ -64,6 +72,7 @@ public class InspectorView : VisualElement
             _controller.OnClipDataChanged +=
                 OnClipDataChanged;
         }
+
 
         Refresh();
     }
@@ -77,6 +86,7 @@ public class InspectorView : VisualElement
     {
         VisualElement header =
             new VisualElement();
+
 
         header.style.height =
             32;
@@ -102,6 +112,7 @@ public class InspectorView : VisualElement
                 0.08f,
                 0.08f);
 
+
         _titleLabel =
             new Label(
                 "Inspector");
@@ -112,8 +123,10 @@ public class InspectorView : VisualElement
         _titleLabel.style.unityFontStyleAndWeight =
             FontStyle.Bold;
 
+
         header.Add(
             _titleLabel);
+
 
         Add(
             header);
@@ -128,6 +141,7 @@ public class InspectorView : VisualElement
     {
         _content =
             new VisualElement();
+
 
         _content.style.flexGrow =
             1;
@@ -147,6 +161,7 @@ public class InspectorView : VisualElement
         _content.style.paddingBottom =
             8;
 
+
         Add(
             _content);
     }
@@ -163,14 +178,19 @@ public class InspectorView : VisualElement
             return;
         }
 
-        _updating = true;
+
+        _updating =
+            true;
+
 
         _content.Clear();
+
 
         BaseClipData clip =
             _controller != null
                 ? _controller.SelectedClip
                 : null;
+
 
         if (clip == null)
         {
@@ -187,13 +207,17 @@ public class InspectorView : VisualElement
                     0.55f,
                     0.55f);
 
+
             _content.Add(
                 emptyLabel);
 
-            _updating = false;
+
+            _updating =
+                false;
 
             return;
         }
+
 
         CreateCommonFields(
             clip);
@@ -216,7 +240,9 @@ public class InspectorView : VisualElement
                 voiceClipData);
         }
 
-        _updating = false;
+
+        _updating =
+            false;
     }
 
 
@@ -227,6 +253,10 @@ public class InspectorView : VisualElement
     private void CreateCommonFields(
         BaseClipData clip)
     {
+        // =====================================================
+        // Type
+        // =====================================================
+
         Label typeLabel =
             new Label(
                 GetClipTypeName(
@@ -238,9 +268,93 @@ public class InspectorView : VisualElement
         typeLabel.style.unityFontStyleAndWeight =
             FontStyle.Bold;
 
+
         _content.Add(
             typeLabel);
 
+
+        // =====================================================
+        // Name
+        // =====================================================
+
+        _nameField =
+            new TextField(
+                "Name");
+
+        _nameField.value =
+            GetClipDisplayName(
+                clip);
+
+
+        // -----------------------------------------------------
+        // Focus Out Save
+        // -----------------------------------------------------
+
+        _nameField.RegisterCallback<
+            FocusOutEvent>(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                if (_controller == null)
+                {
+                    return;
+                }
+
+
+                _controller.SetClipName(
+                    clip,
+                    _nameField.value);
+            });
+
+
+        // -----------------------------------------------------
+        // Enter Save
+        // -----------------------------------------------------
+
+        _nameField.RegisterCallback<
+            KeyDownEvent>(
+            evt =>
+            {
+                if (_updating)
+                {
+                    return;
+                }
+
+                if (_controller == null)
+                {
+                    return;
+                }
+
+
+                if (evt.keyCode ==
+                        KeyCode.Return ||
+                    evt.keyCode ==
+                        KeyCode.KeypadEnter)
+                {
+                    _controller.SetClipName(
+                        clip,
+                        _nameField.value);
+
+                    _nameField.Blur();
+
+                    evt.StopPropagation();
+
+                    evt.PreventDefault();
+                }
+            });
+
+
+        _content.Add(
+            _nameField);
+
+
+        // =====================================================
+        // Start Time
+        // =====================================================
 
         _startTimeField =
             new FloatField(
@@ -248,6 +362,7 @@ public class InspectorView : VisualElement
 
         _startTimeField.value =
             clip.StartTime;
+
 
         _startTimeField.RegisterValueChangedCallback(
             evt =>
@@ -257,14 +372,20 @@ public class InspectorView : VisualElement
                     return;
                 }
 
+
                 _controller.SetClipStartTime(
                     clip,
                     evt.newValue);
             });
 
+
         _content.Add(
             _startTimeField);
 
+
+        // =====================================================
+        // Length
+        // =====================================================
 
         _lengthField =
             new FloatField(
@@ -272,6 +393,7 @@ public class InspectorView : VisualElement
 
         _lengthField.value =
             clip.Length;
+
 
         _lengthField.RegisterValueChangedCallback(
             evt =>
@@ -281,14 +403,20 @@ public class InspectorView : VisualElement
                     return;
                 }
 
+
                 _controller.SetClipLength(
                     clip,
                     evt.newValue);
             });
 
+
         _content.Add(
             _lengthField);
 
+
+        // =====================================================
+        // End Time
+        // =====================================================
 
         _endTimeField =
             new FloatField(
@@ -300,8 +428,74 @@ public class InspectorView : VisualElement
         _endTimeField.isReadOnly =
             true;
 
+
         _content.Add(
             _endTimeField);
+    }
+
+
+    // =========================================================
+    // Get Clip Display Name
+    // =========================================================
+
+    private string GetClipDisplayName(
+        BaseClipData clip)
+    {
+        if (clip == null)
+        {
+            return string.Empty;
+        }
+
+
+        // 优先使用自定义名称
+        if (!string.IsNullOrEmpty(
+                clip.Name))
+        {
+            return clip.Name;
+        }
+
+
+        // =====================================================
+        // Animation
+        // =====================================================
+
+        if (clip
+            is AnimationClipData
+                animationClipData)
+        {
+            if (animationClipData.Animation
+                != null)
+            {
+                return animationClipData
+                    .Animation
+                    .name;
+            }
+
+            return "Animation";
+        }
+
+
+        // =====================================================
+        // Voice
+        // =====================================================
+
+        if (clip
+            is VoiceClipData
+                voiceClipData)
+        {
+            if (voiceClipData.Voice
+                != null)
+            {
+                return voiceClipData
+                    .Voice
+                    .name;
+            }
+
+            return "Voice";
+        }
+
+
+        return string.Empty;
     }
 
 
@@ -317,13 +511,15 @@ public class InspectorView : VisualElement
                 "Animation");
 
         _animationField.objectType =
-            typeof(AnimationClip);
+            typeof(
+                AnimationClip);
 
         _animationField.allowSceneObjects =
             false;
 
         _animationField.value =
             clip.Animation;
+
 
         _animationField.RegisterValueChangedCallback(
             evt =>
@@ -333,14 +529,17 @@ public class InspectorView : VisualElement
                     return;
                 }
 
+
                 AnimationClip animation =
                     evt.newValue
                         as AnimationClip;
+
 
                 _controller.SetAnimation(
                     clip,
                     animation);
             });
+
 
         _content.Add(
             _animationField);
@@ -359,13 +558,15 @@ public class InspectorView : VisualElement
                 "Voice");
 
         _voiceField.objectType =
-            typeof(AudioClip);
+            typeof(
+                AudioClip);
 
         _voiceField.allowSceneObjects =
             false;
 
         _voiceField.value =
             clip.Voice;
+
 
         _voiceField.RegisterValueChangedCallback(
             evt =>
@@ -375,14 +576,17 @@ public class InspectorView : VisualElement
                     return;
                 }
 
+
                 AudioClip voice =
                     evt.newValue
                         as AudioClip;
+
 
                 _controller.SetVoice(
                     clip,
                     voice);
             });
+
 
         _content.Add(
             _voiceField);
@@ -403,11 +607,37 @@ public class InspectorView : VisualElement
     private void OnClipDataChanged(
         BaseClipData clip)
     {
-        if (_controller.SelectedClip ==
+        if (_controller == null)
+        {
+            return;
+        }
+
+
+        if (_controller.SelectedClip !=
             clip)
         {
-            Refresh();
+            return;
         }
+
+
+        // =====================================================
+        // 如果当前正在编辑 Name
+        // 不重新创建 Inspector
+        //
+        // 防止 TextField 输入过程中丢失焦点
+        // =====================================================
+
+        if (_nameField != null &&
+            _nameField.panel != null &&
+            _nameField.focusController != null &&
+            _nameField.focusController.focusedElement ==
+            _nameField)
+        {
+            return;
+        }
+
+
+        Refresh();
     }
 
 
@@ -421,15 +651,23 @@ public class InspectorView : VisualElement
         if (clip
             is AnimationClipData)
         {
-            return "Animation Clip";
+            return
+                "Animation Clip";
         }
+
 
         if (clip
             is VoiceClipData)
         {
-            return "Voice Clip";
+            return
+                "Voice Clip";
         }
 
-        return clip.GetType().Name;
+
+        return
+            clip.GetType()
+                .Name;
     }
+
+
 }

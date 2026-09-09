@@ -420,64 +420,6 @@ public class TimeLineWindow : EditorWindow
         _root.Focus();
     }
 
-    private void OnTimelineKeyDown(KeyDownEvent evt)
-    {
-        if (_timeLineController == null)
-        {
-            return;
-        }
-
-        bool ctrlOrCommand = evt.ctrlKey || evt.commandKey;
-
-        // Ctrl + C
-        if (ctrlOrCommand && evt.keyCode == KeyCode.C)
-        {
-            if (_timeLineController.SelectedClips.Count > 0)
-            {
-                _timeLineController.CopySelectedClips();
-                evt.StopPropagation();
-            }
-
-            return;
-        }
-
-        // Ctrl + V
-        if (ctrlOrCommand && evt.keyCode == KeyCode.V)
-        {
-            BaseClipData selectedClip = _timeLineController.SelectedClip;
-
-            if (selectedClip != null)
-            {
-                TrackData track = _timeLineController.GetTrackForClip(selectedClip);
-
-                if (track != null && _timeLineController.HasClipboard)
-                {
-                    _timeLineController.PasteClips(
-                        track,
-                        selectedClip.EndTime
-                    );
-
-                    evt.StopPropagation();
-                }
-            }
-
-            return;
-        }
-
-        // Delete / Backspace
-        if (evt.keyCode == KeyCode.Delete ||
-            evt.keyCode == KeyCode.Backspace)
-        {
-            if (_timeLineController.SelectedClips.Count > 0)
-            {
-                _timeLineController.DeleteSelectedClips();
-                evt.StopPropagation();
-            }
-
-            return;
-        }
-    }
-
     private void OnRootKeyDown(
         KeyDownEvent evt)
     {
@@ -531,8 +473,7 @@ public class TimeLineWindow : EditorWindow
         // Delete
         // =========================================================
 
-        if (evt.keyCode == KeyCode.Delete ||
-            evt.keyCode == KeyCode.Backspace)
+        if (evt.keyCode == KeyCode.Delete)
         {
             if (_timeLineController.SelectedClips.Count > 0)
             {

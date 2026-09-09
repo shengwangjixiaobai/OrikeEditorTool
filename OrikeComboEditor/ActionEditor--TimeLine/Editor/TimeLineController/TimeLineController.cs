@@ -31,6 +31,8 @@ public class TimeLineController
 
     public event Action
         OnStructureChanged;
+    public event Action<TrackData>
+        OnTrackDataChanged;
 
 
     // =========================================================
@@ -1040,6 +1042,59 @@ public class TimeLineController
     }
 
 
+    public void SetClipName(
+        BaseClipData clipData,
+        string clipName)
+    {
+        if (clipData == null ||
+            _actionData == null)
+        {
+            return;
+        }
+
+        Undo.RecordObject(
+            _actionData,
+            "Change Clip Name");
+
+        clipData.Name = clipName;
+
+        MarkDirty();
+
+        OnClipDataChanged?.Invoke(
+            clipData);
+    }
+
+    public void SetTrackName(
+        TrackData trackData,
+        string trackName)
+    {
+        if (trackData == null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                trackName))
+        {
+            trackName =
+                "Track";
+        }
+
+        Undo.RecordObject(
+            _actionData,
+            "Change Track Name");
+
+        trackData.TrackName =
+            trackName;
+
+        MarkDirty();
+
+        OnTrackDataChanged?.Invoke(
+            trackData);
+    }
+
+
+
     // =========================================================
     // Min Length
     // =========================================================
@@ -1109,6 +1164,9 @@ public class TimeLineController
             AnimationClipData clone =
                 new AnimationClipData();
 
+            clone.Name =
+                source.Name;
+
             clone.Animation =
                 animationClipData.Animation;
 
@@ -1130,6 +1188,9 @@ public class TimeLineController
         {
             VoiceClipData clone =
                 new VoiceClipData();
+
+            clone.Name =
+                source.Name;
 
             clone.Voice =
                 voiceClipData.Voice;
