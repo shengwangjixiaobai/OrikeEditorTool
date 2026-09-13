@@ -4,8 +4,8 @@ using UnityEngine;
 /// <summary>
 /// Hitbox Clip
 ///
-/// ÒıÓÃÒ»¸ö¹ÒÔØ Hitbox ½Å±¾ + Collider µÄ GameObject
-/// ÔÚ Clip Ê±¼ä¶ÎÄÚ¼¤»î¸Ã hitbox
+/// å¼•ç”¨ä¸€ä¸ªæŒ‚è½½ Hitbox è„šæœ¬ + Collider çš„ GameObject
+/// åœ¨ Clip æ—¶é—´æ®µå†…æ¿€æ´»è¯¥ hitbox
 /// </summary>
 [Serializable]
 public class HitboxClipData
@@ -14,21 +14,21 @@ public class HitboxClipData
     public GameObject HitboxPrefab;
 
     /// <summary>
-    /// ¹ÒÔØ¹Ç÷ÀÃû
+    /// æŒ‚è½½éª¨éª¼å
     ///
-    /// ¿Õ×Ö·û´® = ¹ÒÔØµ½½ÇÉ«¸ù
-    /// ·ñÔòµİ¹é²éÕÒ½ÇÉ« Transform Ê÷
+    /// ç©ºå­—ç¬¦ä¸² = æŒ‚è½½åˆ°è§’è‰²æ ¹
+    /// å¦åˆ™é€’å½’æŸ¥æ‰¾è§’è‰² Transform æ ‘
     /// </summary>
     public string AttachBone;
 
     /// <summary>
-    /// Ïà¶Ô¹ÒÔØµãµÄ¾Ö²¿Æ«ÒÆ
+    /// ç›¸å¯¹æŒ‚è½½ç‚¹çš„å±€éƒ¨åç§»
     /// </summary>
     public Vector3 LocalOffset;
 
 
     /// <summary>
-    /// µ±Ç° Clip ÀàĞÍ
+    /// å½“å‰ Clip ç±»å‹
     /// </summary>
     public override ClipType Type
     {
@@ -40,10 +40,10 @@ public class HitboxClipData
 
 
     /// <summary>
-    /// Ë¢ĞÂÊı¾İ
+    /// åˆ·æ–°æ•°æ®
     ///
-    /// Hitbox Ã»ÓĞÔ­ÉúÊ±³¤¸ÅÄî
-    /// Ä¬ÈÏ 0.5s£¬ÓÉÓÃ»§ÔÚ Inspector µ÷Õû
+    /// Hitbox æ²¡æœ‰åŸç”Ÿæ—¶é•¿æ¦‚å¿µ
+    /// é»˜è®¤ 0.5sï¼Œç”±ç”¨æˆ·åœ¨ Inspector è°ƒæ•´
     /// </summary>
     public override void RefreshData()
     {
@@ -59,10 +59,10 @@ public class HitboxClipData
 
 
     /// <summary>
-    /// »ñÈ¡Ô¤ÀÀÊı¾İ
+    /// è·å–é¢„è§ˆæ•°æ®
     ///
-    /// ÔÚÊ±¼ä¶ÎÄÚ·µ»Ø HitboxPreviewData
-    /// Ê±¼ä¶ÎÍâ·µ»Ø null
+    /// åœ¨æ—¶é—´æ®µå†…è¿”å› HitboxPreviewData
+    /// æ—¶é—´æ®µå¤–è¿”å› null
     /// </summary>
     public override BasePreviewData
         GetPreviewDataAtTime(

@@ -6,25 +6,25 @@ public class EffectPreviewData
     : BasePreviewData
 {
     /// <summary>
-    /// ╣╠г╟пХр╙т╓юю╣дльп╖т╓жфлЕ
+    /// Е╫⌠Е┴█И°─Х╕│И╒└Х╖┬Г └Г┴╧Ф∙┬И╒└Е┬╤Д╫⌠
     /// </summary>
     public GameObject EffectPrefab;
 
     /// <summary>
-    /// ╣╠г╟льп╖дз╡©╡╔╥ей╠╪Д
+    /// Е╫⌠Е┴█Г┴╧Ф∙┬Е├┘И┐╗Ф▓╜Ф■╬Ф≈╤И≈╢
     /// </summary>
     public float LocalTime;
 
     /// <summary>
-    /// ╧рть╧гВюцШ
+    /// Ф▄┌Х╫╫И╙╗И╙╪Е░█
     ///
-    /// ©увж╥Ш╢╝ = ╧рть╣╫╫ги╚╦Ы
-    /// ╥ЯтР╣щ╧И╡Иур╫ги╚ Transform йВ
+    /// Г╘╨Е╜≈Г╛╕Д╦╡ = Ф▄┌Х╫╫Е┬╟Х╖▓Х┴╡Ф═╧
+    /// Е░╕Е┬≥И─▓Е╫▓Ф÷╔Ф┴╬Х╖▓Х┴╡ Transform Ф═▒
     /// </summary>
     public string AttachBone;
 
     /// <summary>
-    /// оЮ╤т╧рть╣Ц╣д╬ж╡©ф╚рф
+    /// Г⌡╦Е╞╧Ф▄┌Х╫╫Г┌╧Г └Е╠─И┐╗Е│▐Г╖╩
     /// </summary>
     public Vector3 LocalOffset;
 

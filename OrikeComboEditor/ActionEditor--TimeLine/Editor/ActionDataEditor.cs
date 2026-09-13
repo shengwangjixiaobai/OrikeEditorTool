@@ -8,7 +8,7 @@ public class ActionDataEditor : Editor
 {
     private ActionData _actionData;
 
-    // Ã¿¸ö Track ÕÛµş×´Ì¬¼ÇÂ¼
+    // æ¯ä¸ª Track æŠ˜å çŠ¶æ€è®°å½•
     private readonly Dictionary<TrackData, bool> _trackFoldouts =
         new Dictionary<TrackData, bool>();
 
@@ -39,7 +39,7 @@ public class ActionDataEditor : Editor
         if (_actionData == null)
         {
             EditorGUILayout.HelpBox(
-                "ActionData ÎŞĞ§¡£",
+                "ActionData æ— æ•ˆã€‚",
                 MessageType.Error);
 
             return;
@@ -106,13 +106,13 @@ public class ActionDataEditor : Editor
             _actionData.Tracks.Count == 0)
         {
             EditorGUILayout.HelpBox(
-                "µ±Ç° ActionData Ã»ÓĞÈÎºÎ Track¡£",
+                "å½“å‰ ActionData æ²¡æœ‰ä»»ä½• Trackã€‚",
                 MessageType.Info);
 
             return;
         }
 
-        // ÇåÀíÒÑ¾­Ê§Ğ§µÄ Track
+        // æ¸…ç†å·²ç»å¤±æ•ˆçš„ Track
         List<TrackData> invalidTracks =
             new List<TrackData>();
 
@@ -203,7 +203,7 @@ public class ActionDataEditor : Editor
             "]";
 
 
-        // ±êÌâ£¨¿Éµã»÷Õ¹¿ª/ÊÕÆğµÄ foldout ±êÌâ£©
+        // æ ‡é¢˜ï¼ˆå¯ç‚¹å‡»å±•å¼€/æ”¶èµ·çš„ foldout æ ‡é¢˜ï¼‰
         bool newFoldout =
             EditorGUILayout.Foldout(
                 foldout,
@@ -237,7 +237,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // ÕÛµşÄÚÈİ
+        // æŠ˜å å†…å®¹
         // -----------------------------------------------------
 
         if (!_trackFoldouts[track])
@@ -327,7 +327,7 @@ public class ActionDataEditor : Editor
         if (track.Clips.Count == 0)
         {
             EditorGUILayout.HelpBox(
-                "µ±Ç° Track Ã»ÓĞÈÎºÎ Clip¡£",
+                "å½“å‰ Track æ²¡æœ‰ä»»ä½• Clipã€‚",
                 MessageType.Info);
 
             return;
@@ -502,7 +502,7 @@ public class ActionDataEditor : Editor
 
         // -----------------------------------------------------
         // Hitbox / Behitbox Clip
-        // £¨BehitboxClipData ¼Ì³Ğ HitboxClipData£¬¹²ÓÃ´Ë·ÖÖ§£©
+        // ï¼ˆBehitboxClipData ç»§æ‰¿ HitboxClipDataï¼Œå…±ç”¨æ­¤åˆ†æ”¯ï¼‰
         // -----------------------------------------------------
 
         else if (clip is HitboxClipData)
@@ -530,7 +530,7 @@ public class ActionDataEditor : Editor
         else
         {
             EditorGUILayout.HelpBox(
-                "Î´ÖªµÄ Clip ÀàĞÍ¡£",
+                "æœªçŸ¥çš„ Clip ç±»å‹ã€‚",
                 MessageType.Warning);
         }
 
@@ -801,7 +801,7 @@ public class ActionDataEditor : Editor
         }
 
 
-        // ÊÂ¼ş×Ö¶Î
+        // äº‹ä»¶å­—æ®µ
         if (clip.StateEvent != null)
         {
             DrawStateEventFieldsIMGUI(
@@ -810,7 +810,7 @@ public class ActionDataEditor : Editor
     }
 
 
-    // IMGUI ÏÂÓÃ·´Éä»æÖÆÊÂ¼ş×Ö¶Î£¨¼ò»¯°æ£©
+    // IMGUI ä¸‹ç”¨åå°„ç»˜åˆ¶äº‹ä»¶å­—æ®µï¼ˆç®€åŒ–ç‰ˆï¼‰
     private void DrawStateEventFieldsIMGUI(
         object eventInstance)
     {
@@ -1039,7 +1039,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // È·±£ List ÒÑ³õÊ¼»¯
+        // ç¡®ä¿ List å·²åˆå§‹åŒ–
         // -----------------------------------------------------
 
         if (track.Clips == null)
@@ -1050,9 +1050,9 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // ´´½¨ Clip ÊµÀı
-        // ¸ù¾İ¹ìµÀÀàĞÍ´´½¨¶ÔÓ¦µÄ ClipData
-        // Ö±½Ó new ¼´¿É£¬SerializeReference ×Ö¶ÎÓÉ Unity ×Ô¶¯ĞòÁĞ»¯
+        // åˆ›å»º Clip å®ä¾‹
+        // æ ¹æ®è½¨é“ç±»å‹åˆ›å»ºå¯¹åº”çš„ ClipData
+        // ç›´æ¥ new å³å¯ï¼ŒSerializeReference å­—æ®µç”± Unity è‡ªåŠ¨åºåˆ—åŒ–
         // -----------------------------------------------------
 
         BaseClipData newClip = null;
@@ -1102,7 +1102,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // Ä¬ÈÏÖµ
+        // é»˜è®¤å€¼
         // -----------------------------------------------------
 
         newClip.StartTime =
@@ -1116,7 +1116,7 @@ public class ActionDataEditor : Editor
 
 
         // -----------------------------------------------------
-        // Ìí¼Óµ½ÁĞ±í
+        // æ·»åŠ åˆ°åˆ—è¡¨
         // -----------------------------------------------------
 
         track.Clips.Add(
@@ -1350,7 +1350,7 @@ public class ActionDataEditor : Editor
         bool confirm =
             EditorUtility.DisplayDialog(
                 "Delete Track",
-                "È·¶¨ÒªÉ¾³ıÕâ¸ö Track Âğ£¿\n¹ìµÀÖĞµÄËùÓĞ Clip Ò²»á±»Ò»ÆğÉ¾³ı¡£",
+                "ç¡®å®šè¦åˆ é™¤è¿™ä¸ª Track å—ï¼Ÿ\nè½¨é“ä¸­çš„æ‰€æœ‰ Clip ä¹Ÿä¼šè¢«ä¸€èµ·åˆ é™¤ã€‚",
                 "Delete",
                 "Cancel");
 
@@ -1400,7 +1400,7 @@ public class ActionDataEditor : Editor
         bool confirm =
             EditorUtility.DisplayDialog(
                 "Delete Clip",
-                "È·¶¨ÒªÉ¾³ıÕâ¸ö Clip Âğ£¿",
+                "ç¡®å®šè¦åˆ é™¤è¿™ä¸ª Clip å—ï¼Ÿ",
                 "Delete",
                 "Cancel");
 
@@ -1523,7 +1523,7 @@ public class ActionDataEditor : Editor
 
 
         // =====================================================
-        // ÓÅÏÈÏÔÊ¾ÔÚ Timeline ÖĞÉèÖÃ¹ıµÄ×Ô¶¨ÒåÃû×Ö
+        // ä¼˜å…ˆæ˜¾ç¤ºåœ¨ Timeline ä¸­è®¾ç½®è¿‡çš„è‡ªå®šä¹‰åå­—
         // =====================================================
 
         if (!string.IsNullOrEmpty(
@@ -1604,7 +1604,7 @@ public class ActionDataEditor : Editor
 
 
         // =====================================================
-        // Behitbox Clip£¨ÏÈÅĞ¶Ï×ÓÀà£©
+        // Behitbox Clipï¼ˆå…ˆåˆ¤æ–­å­ç±»ï¼‰
         // =====================================================
 
         if (clip is BehitboxClipData)

@@ -112,7 +112,7 @@ public class TimeLineController
             _selectedClips.Add(
                 clipData);
 
-            // Ñ¡ÖĞ clip Ê±È¡ÏûµãÊÂ¼şÑ¡ÖĞ
+            // é€‰ä¸­ clip æ—¶å–æ¶ˆç‚¹äº‹ä»¶é€‰ä¸­
             if (SelectedPointEvent !=
                 null)
             {
@@ -1036,8 +1036,8 @@ public class TimeLineController
 
         clip.RefreshData();
 
-        // Ã»ÓĞ ParticleSystem Ê±
-        // RefreshData »á¸ø 1f Ä¬ÈÏ³¤¶È
+        // æ²¡æœ‰ ParticleSystem æ—¶
+        // RefreshData ä¼šç»™ 1f é»˜è®¤é•¿åº¦
         if (clip.Length <= 0f)
         {
             clip.Length = 1f;
@@ -1499,8 +1499,8 @@ public class TimeLineController
     // =========================================================
     // Hitbox / Behitbox Set
     //
-    // HitboxClipData ÊÇ BehitboxClipData µÄ»ùÀà
-    // ËùÒÔÕâĞ©·½·¨¶ÔÁ½ÖÖÀàĞÍ¶¼ÊÊÓÃ
+    // HitboxClipData æ˜¯ BehitboxClipData çš„åŸºç±»
+    // æ‰€ä»¥è¿™äº›æ–¹æ³•å¯¹ä¸¤ç§ç±»å‹éƒ½é€‚ç”¨
     // =========================================================
 
     public void SetHitbox(
@@ -1580,8 +1580,8 @@ public class TimeLineController
 
 
     /// <summary>
-    /// ±ê¼Ç StateEvent Êı¾İÒÑĞŞ¸Ä
-    /// ÓÃÓÚÊÂ¼şÊµÀı×Ö¶Î±»·´ÉäĞŞ¸Äºó±ê¼Ç dirty
+    /// æ ‡è®° StateEvent æ•°æ®å·²ä¿®æ”¹
+    /// ç”¨äºäº‹ä»¶å®ä¾‹å­—æ®µè¢«åå°„ä¿®æ”¹åæ ‡è®° dirty
     /// </summary>
     public void SetStateEventDirty(
         StateEventData clipData)
@@ -1631,7 +1631,7 @@ public class TimeLineController
         trackData.PointEvents.Add(
             pointEvent);
 
-        // Ñ¡ÖĞµãÊÂ¼ş£¬È¡Ïû clip Ñ¡ÖĞ
+        // é€‰ä¸­ç‚¹äº‹ä»¶ï¼Œå–æ¶ˆ clip é€‰ä¸­
         _selectedClips.Clear();
 
         SelectedClip =
@@ -1660,7 +1660,7 @@ public class TimeLineController
     public void SelectPointEvent(
         PointEventData pointEvent)
     {
-        // Ñ¡ÖĞµãÊÂ¼ş£¬È¡Ïû clip Ñ¡ÖĞ
+        // é€‰ä¸­ç‚¹äº‹ä»¶ï¼Œå–æ¶ˆ clip é€‰ä¸­
         _selectedClips.Clear();
 
         SelectedClip =
@@ -1728,8 +1728,8 @@ public class TimeLineController
                 0f,
                 time);
 
-        // Ö»Í¨ÖªÊı¾İ±ä»¯£¬Marker Î»ÖÃÓÉ TrackView ¾Ö²¿Ë¢ĞÂ
-        // ²»´¥·¢ OnStructureChanged£¬±ÜÃâÕû¸ö´°¿ÚÖØ½¨µ¼ÖÂÊäÈë½¹µã¶ªÊ§
+        // åªé€šçŸ¥æ•°æ®å˜åŒ–ï¼ŒMarker ä½ç½®ç”± TrackView å±€éƒ¨åˆ·æ–°
+        // ä¸è§¦å‘ OnStructureChangedï¼Œé¿å…æ•´ä¸ªçª—å£é‡å»ºå¯¼è‡´è¾“å…¥ç„¦ç‚¹ä¸¢å¤±
         OnPointEventChanged?.Invoke(
             pointEvent);
     }
@@ -1753,7 +1753,7 @@ public class TimeLineController
 
 
     /// <summary>
-    /// ±ê¼Ç PointEvent Êı¾İÒÑĞŞ¸Ä
+    /// æ ‡è®° PointEvent æ•°æ®å·²ä¿®æ”¹
     /// </summary>
     public void SetPointEventDirty(
         PointEventData pointEvent)
@@ -1896,8 +1896,8 @@ public class TimeLineController
             }
         }
 
-        // Effect Ã»ÓĞÔ­Éú×î´ó³¤¶È¸ÅÄî
-        // ÓÉÓÃ»§ÔÚ Inspector Àï×ÔÓÉµ÷Õû
+        // Effect æ²¡æœ‰åŸç”Ÿæœ€å¤§é•¿åº¦æ¦‚å¿µ
+        // ç”±ç”¨æˆ·åœ¨ Inspector é‡Œè‡ªç”±è°ƒæ•´
         if (clipData
             is EffectClipData)
         {
@@ -1905,7 +1905,7 @@ public class TimeLineController
         }
 
         // Hitbox / Behitbox
-        // ÓÉÓÃ»§ÔÚ Inspector Àï×ÔÓÉµ÷Õû
+        // ç”±ç”¨æˆ·åœ¨ Inspector é‡Œè‡ªç”±è°ƒæ•´
         if (clipData
             is HitboxClipData)
         {
@@ -1913,7 +1913,7 @@ public class TimeLineController
         }
 
         // State Event
-        // ÓÉÓÃ»§ÔÚ Inspector Àï×ÔÓÉµ÷Õû
+        // ç”±ç”¨æˆ·åœ¨ Inspector é‡Œè‡ªç”±è°ƒæ•´
         if (clipData
             is StateEventData)
         {
@@ -2011,7 +2011,7 @@ public class TimeLineController
             return clone;
         }
 
-        // Behitbox ÏÈÅĞ¶Ï£¨HitboxClipData µÄ×ÓÀà£©
+        // Behitbox å…ˆåˆ¤æ–­ï¼ˆHitboxClipData çš„å­ç±»ï¼‰
         if (source
             is BehitboxClipData
                 behitboxClipData)
@@ -2087,9 +2087,9 @@ public class TimeLineController
             clone.EventType =
                 stateEventClipData.EventType;
 
-            // ÖØĞÂ´´½¨ÊÂ¼şÊµÀı
-            // £¨[SerializeReference] ¶ÔÏóµÄÉî¿½±´±È½Ï¸´ÔÓ
-            // ÕâÀï°´ÀàĞÍÖØ½¨Ò»·İĞÂµÄÄ¬ÈÏÊµÀı£©
+            // é‡æ–°åˆ›å»ºäº‹ä»¶å®ä¾‹
+            // ï¼ˆ[SerializeReference] å¯¹è±¡çš„æ·±æ‹·è´æ¯”è¾ƒå¤æ‚
+            // è¿™é‡ŒæŒ‰ç±»å‹é‡å»ºä¸€ä»½æ–°çš„é»˜è®¤å®ä¾‹ï¼‰
             clone.CreateEventInstance();
 
             clone.StartTime =
@@ -2339,7 +2339,7 @@ public class TimeLineController
             return;
         }
 
-        // Ctrl / Command ¶àÑ¡
+        // Ctrl / Command å¤šé€‰
         if (additive)
         {
             SelectClip(
@@ -2349,7 +2349,25 @@ public class TimeLineController
             return;
         }
 
-        // ÆÕÍ¨µ¥»÷£ºÇå¿ÕÖ®Ç°µÄÑ¡ÖĞ£¬Ö»Ñ¡ÖĞµ±Ç° clip
+        // æ™®é€šå•å‡»ï¼š
+        // å¦‚æœè¯¥ clip å·²åœ¨å¤šé€‰é›†åˆä¸­ï¼Œä¿æŒç°æœ‰é€‰ä¸­ä¸å˜ï¼Œ
+        // è¿™æ ·æ¡†é€‰å¤šé€‰åç‚¹å…¶ä¸­ä¸€ä¸ª clip ä¸ä¼šä¸¢æ‰å…¶ä»–é€‰ä¸­ï¼Œ
+        // ç”¨æˆ·å¯ä»¥ç›´æ¥æ‹–æ‹½é€‰ä¸­çš„å¤šä¸ª clipã€‚
+        // ç‚¹å‡»ç©ºç™½å¤„æ‰ä¼šæ¸…ç©ºå…¨éƒ¨é€‰ä¸­ï¼ˆç”± ActionView æ¡†é€‰é€»è¾‘å¤„ç†ï¼‰ã€‚
+        if (_selectedClips.Count > 1 &&
+            _selectedClips.Contains(
+                clipData))
+        {
+            SelectedClip =
+                clipData;
+
+            OnSelectionChanged?.Invoke(
+                SelectedClip);
+
+            return;
+        }
+
+        // æ™®é€šå•å‡»ï¼šæ¸…ç©ºä¹‹å‰çš„é€‰ä¸­ï¼Œåªé€‰ä¸­å½“å‰ clip
         SelectClip(
             clipData,
             false);

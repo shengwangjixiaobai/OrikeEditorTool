@@ -2,39 +2,39 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// µãÊÂ¼ş
+/// ç‚¹äº‹ä»¶
 ///
-/// ÔÚÄ³¸öÊ±¼äµã´¥·¢Ò»´Î
-///   - µ± Playhead ´©Ô½ Time Ê±µ÷ÓÃ IPointEvent.OnCall()
+/// åœ¨æŸä¸ªæ—¶é—´ç‚¹è§¦å‘ä¸€æ¬¡
+///   - å½“ Playhead ç©¿è¶Š Time æ—¶è°ƒç”¨ IPointEvent.OnCall()
 ///
-/// µãÊÂ¼ş¿ÉÒÔ¸½¼Óµ½ÈÎÒâ¹ìµÀÉÏ
-/// ÏÔÊ¾ÎªÒ»¸ö±ê¼Ç£¨ÁâĞÎ£©£¬²»ÊÇ Clip Æ¬¶Î
+/// ç‚¹äº‹ä»¶å¯ä»¥é™„åŠ åˆ°ä»»æ„è½¨é“ä¸Š
+/// æ˜¾ç¤ºä¸ºä¸€ä¸ªæ ‡è®°ï¼ˆè±å½¢ï¼‰ï¼Œä¸æ˜¯ Clip ç‰‡æ®µ
 /// </summary>
 [Serializable]
 public class PointEventData
 {
     /// <summary>
-    /// ÏÔÊ¾Ãû³Æ
+    /// æ˜¾ç¤ºåç§°
     /// </summary>
     public string Name = "Point Event";
 
     /// <summary>
-    /// ´¥·¢Ê±¼äµã£¨Ãë£©
+    /// è§¦å‘æ—¶é—´ç‚¹ï¼ˆç§’ï¼‰
     /// </summary>
     public float Time;
 
     public EventType EventType;
 
     /// <summary>
-    /// ¾ßÌåµÄµãÊÂ¼şÊµÀı
-    /// [SerializeReference] Ö§³Ö¶àÌ¬ĞòÁĞ»¯
+    /// å…·ä½“çš„ç‚¹äº‹ä»¶å®ä¾‹
+    /// [SerializeReference] æ”¯æŒå¤šæ€åºåˆ—åŒ–
     /// </summary>
     [SerializeReference]
     public IPointEvent PointEvent;
 
 
     /// <summary>
-    /// ¸ù¾İ EventType ´´½¨ÊÂ¼şÊµÀı
+    /// æ ¹æ® EventType åˆ›å»ºäº‹ä»¶å®ä¾‹
     /// </summary>
     public void CreateEventInstance()
     {

@@ -15,7 +15,7 @@ public abstract class BaseClipData
 
 
     /// <summary>
-    /// µ±Ç° Clip µÄÀàĞÍ
+    /// å½“å‰ Clip çš„ç±»å‹
     /// </summary>
     public abstract ClipType Type
     {
@@ -24,9 +24,9 @@ public abstract class BaseClipData
 
 
     /// <summary>
-    /// Ë¢ĞÂ Clip Êı¾İ
+    /// åˆ·æ–° Clip æ•°æ®
     ///
-    /// µ± Clip ÄÚ²¿×ÊÔ´·¢Éú±ä»¯Ê±µ÷ÓÃ
+    /// å½“ Clip å†…éƒ¨èµ„æºå‘ç”Ÿå˜åŒ–æ—¶è°ƒç”¨
     /// </summary>
     public virtual void RefreshData()
     {
@@ -34,7 +34,7 @@ public abstract class BaseClipData
 
 
     /// <summary>
-    /// ÅĞ¶ÏÖ¸¶¨Ê±¼äÊÇ·ñÎ»ÓÚµ±Ç° Clip ÄÚ
+    /// åˆ¤æ–­æŒ‡å®šæ—¶é—´æ˜¯å¦ä½äºå½“å‰ Clip å†…
     /// </summary>
     public bool ContainsTime(
         float actionTime)
@@ -46,7 +46,7 @@ public abstract class BaseClipData
 
 
     /// <summary>
-    /// »ñÈ¡Ö¸¶¨Ê±¼äµÄÔ¤ÀÀÊı¾İ
+    /// è·å–æŒ‡å®šæ—¶é—´çš„é¢„è§ˆæ•°æ®
     /// </summary>
     public abstract BasePreviewData
         GetPreviewDataAtTime(

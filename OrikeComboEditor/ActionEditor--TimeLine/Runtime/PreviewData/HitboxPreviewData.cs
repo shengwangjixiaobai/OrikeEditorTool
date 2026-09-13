@@ -6,25 +6,25 @@ public class HitboxPreviewData
     : BasePreviewData
 {
     /// <summary>
-    /// µ±Ç°ĞèÒªÔ¤ÀÀµÄ hitbox Ô¤ÖÆÌå
+    /// å½“å‰éœ€è¦é¢„è§ˆçš„ hitbox é¢„åˆ¶ä½“
     /// </summary>
     public GameObject HitboxPrefab;
 
     /// <summary>
-    /// ¹ÒÔØ¹Ç÷ÀÃû
+    /// æŒ‚è½½éª¨éª¼å
     /// </summary>
     public string AttachBone;
 
     /// <summary>
-    /// Ïà¶Ô¹ÒÔØµãµÄ¾Ö²¿Æ«ÒÆ
+    /// ç›¸å¯¹æŒ‚è½½ç‚¹çš„å±€éƒ¨åç§»
     /// </summary>
     public Vector3 LocalOffset;
 
     /// <summary>
-    /// Ô­Ê¼ Clip ÀàĞÍ
+    /// åŸå§‹ Clip ç±»å‹
     ///
-    /// ÓÃÓÚÔÚÔ¤ÀÀÊ±Çø·Ö Hitbox / Behitbox
-    /// ÉèÖÃ²»Í¬µÄ Gizmo ÑÕÉ«
+    /// ç”¨äºåœ¨é¢„è§ˆæ—¶åŒºåˆ† Hitbox / Behitbox
+    /// è®¾ç½®ä¸åŒçš„ Gizmo é¢œè‰²
     /// </summary>
     public ClipType ClipType;
 

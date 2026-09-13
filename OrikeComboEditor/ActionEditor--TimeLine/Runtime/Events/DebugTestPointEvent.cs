@@ -2,9 +2,9 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// µ÷ÊÔÓÃµãÊÂ¼ş
+/// è°ƒè¯•ç”¨ç‚¹äº‹ä»¶
 ///
-/// OnCall Ê±´òÒ»ÌõÈÕÖ¾
+/// OnCall æ—¶æ‰“ä¸€æ¡æ—¥å¿—
 /// </summary>
 [Serializable]
 public class DebugTestPointEvent

@@ -1,10 +1,10 @@
 using System;
 
 /// <summary>
-/// Behitbox Clip£¨ÊÜ»÷¿ò£©
+/// Behitbox Clipï¼ˆå—å‡»æ¡†ï¼‰
 ///
-/// Âß¼­Óë HitboxClipData ÍêÈ«Ò»ÖÂ
-/// Ö»ÊÇ ClipType = Behitbox ÓÃÓÚÇø·Ö¹ìµÀ
+/// é€»è¾‘ä¸ HitboxClipData å®Œå…¨ä¸€è‡´
+/// åªæ˜¯ ClipType = Behitbox ç”¨äºåŒºåˆ†è½¨é“
 /// </summary>
 [Serializable]
 public class BehitboxClipData

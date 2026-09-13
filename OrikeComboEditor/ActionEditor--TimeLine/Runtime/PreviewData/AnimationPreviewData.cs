@@ -7,12 +7,12 @@ using UnityEngine;
 public class AnimationPreviewData : BasePreviewData
 {
     /// <summary>
-    /// 当前需要预览的动画
+    /// 褰撳墠闇�瑕侀瑙堢殑鍔ㄧ敾
     /// </summary>
     public AnimationClip Animation;
 
     /// <summary>
-    /// 当前动画内部时间
+    /// 褰撳墠鍔ㄧ敾鍐呴儴鏃堕棿
     /// </summary>
     public float LocalTime;
 

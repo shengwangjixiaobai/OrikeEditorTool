@@ -10,7 +10,7 @@ public class TrackView
     public const float TrackHeight =
         36f;
 
-    // Point Event ±ê¼Ç³ß´ç£¨³¤·½ĞÎ + Èı½ÇĞÎ£©
+    // Point Event æ ‡è®°å°ºå¯¸ï¼ˆé•¿æ–¹å½¢ + ä¸‰è§’å½¢ï¼‰
     public const string PointEventMarkerClassName =
         "point-event-marker";
 
@@ -20,11 +20,11 @@ public class TrackView
     private const float MarkerHeight =
         14f;
 
-    // Èı½ÇĞÎ¼â¶ËÏà¶Ô marker ×ó±ßÔµµÄ x Æ«ÒÆ
+    // ä¸‰è§’å½¢å°–ç«¯ç›¸å¯¹ marker å·¦è¾¹ç¼˜çš„ x åç§»
     private const float MarkerTipOffsetX =
         4f;
 
-    // ±ê¼Çµ×²¿¾à¹ìµÀµ×±ßµÄ¼ä¾à
+    // æ ‡è®°åº•éƒ¨è·è½¨é“åº•è¾¹çš„é—´è·
     private const float MarkerBottomMargin =
         3f;
 
@@ -67,7 +67,7 @@ public class TrackView
 
 
     // =========================================================
-    // Point Event ÍÏ×§×´Ì¬
+    // Point Event æ‹–æ‹½çŠ¶æ€
     // =========================================================
 
     private PointEventData _draggingPointEvent;
@@ -915,12 +915,12 @@ public class TrackView
     // =========================================================
     // Build Point Event Markers
     //
-    // µãÊÂ¼şÏÔÊ¾ÎªÁâĞÎ±ê¼Ç£¬²»ÊÇ Clip Æ¬¶Î
+    // ç‚¹äº‹ä»¶æ˜¾ç¤ºä¸ºè±å½¢æ ‡è®°ï¼Œä¸æ˜¯ Clip ç‰‡æ®µ
     // =========================================================
 
     private void BuildPointEventMarkers()
     {
-        // Çå³ı¾É±ê¼Ç
+        // æ¸…é™¤æ—§æ ‡è®°
         foreach (
             VisualElement marker
             in _pointEventMarkers)
@@ -978,8 +978,8 @@ public class TrackView
             PointEventMarkerClassName);
 
 
-        // ±ê¼ÇĞÎ×´£º³¤·½ĞÎ + Èı½ÇĞÎ£¨ÊéÇ©/Ğ¡Æì×ÓÑùÊ½£©
-        // Èı½ÇĞÎ¼â¶Ë¶ÔÆëÊÂ¼şÊ±¼äµã
+        // æ ‡è®°å½¢çŠ¶ï¼šé•¿æ–¹å½¢ + ä¸‰è§’å½¢ï¼ˆä¹¦ç­¾/å°æ——å­æ ·å¼ï¼‰
+        // ä¸‰è§’å½¢å°–ç«¯å¯¹é½äº‹ä»¶æ—¶é—´ç‚¹
         marker.style.width =
             MarkerWidth;
 
@@ -997,7 +997,7 @@ public class TrackView
                 : pointEvent.Name;
 
 
-        // ÓÃ generateVisualContent »æÖÆĞÎ×´
+        // ç”¨ generateVisualContent ç»˜åˆ¶å½¢çŠ¶
         marker.generateVisualContent +=
             ctx =>
             {
@@ -1007,8 +1007,8 @@ public class TrackView
             };
 
 
-        // ×ó¼ü£ºÑ¡ÖĞ + ÍÏ×§ÒÆ¶¯
-        // ÓÒ¼ü£ºÑ¡ÖĞ + ²Ëµ¥
+        // å·¦é”®ï¼šé€‰ä¸­ + æ‹–æ‹½ç§»åŠ¨
+        // å³é”®ï¼šé€‰ä¸­ + èœå•
         marker.RegisterCallback<
             PointerDownEvent>(
             evt =>
@@ -1047,7 +1047,7 @@ public class TrackView
             });
 
 
-        // ÍÏ×§ÒÆ¶¯£º°´ÏñËØÔöÁ¿»»ËãÊ±¼ä
+        // æ‹–æ‹½ç§»åŠ¨ï¼šæŒ‰åƒç´ å¢é‡æ¢ç®—æ—¶é—´
         marker.RegisterCallback<
             PointerMoveEvent>(
             evt =>
@@ -1098,7 +1098,7 @@ public class TrackView
             });
 
 
-        // ËÉ¿ª£º½áÊøÍÏ×§
+        // æ¾å¼€ï¼šç»“æŸæ‹–æ‹½
         marker.RegisterCallback<
             PointerUpEvent>(
             evt =>
@@ -1135,9 +1135,9 @@ public class TrackView
     // =========================================================
     // Draw Point Event Marker
     //
-    // ĞÎ×´£ºÉÏ·½³¤·½ĞÎ + ÏÂ·½Èı½ÇĞÎ
-    // Èı½ÇĞÎ¼â¶Ë£¨µ×²¿ÖĞĞÄ£©¶ÔÆëÊÂ¼şÊ±¼äµã
-    // ÏÈ»­ÍâÂÖÀª£¨±ß¿òÉ«£©£¬ÔÙ»­ÄÚÌî³ä£¨Ğ¡Ò»È¦£©
+    // å½¢çŠ¶ï¼šä¸Šæ–¹é•¿æ–¹å½¢ + ä¸‹æ–¹ä¸‰è§’å½¢
+    // ä¸‰è§’å½¢å°–ç«¯ï¼ˆåº•éƒ¨ä¸­å¿ƒï¼‰å¯¹é½äº‹ä»¶æ—¶é—´ç‚¹
+    // å…ˆç”»å¤–è½®å»“ï¼ˆè¾¹æ¡†è‰²ï¼‰ï¼Œå†ç”»å†…å¡«å……ï¼ˆå°ä¸€åœˆï¼‰
     // =========================================================
 
     private void DrawPointEventMarker(
@@ -1149,7 +1149,7 @@ public class TrackView
             _controller.SelectedPointEvent ==
                 pointEvent;
 
-        // Ìî³äÊ¼ÖÕ°×É«£»Î´Ñ¡ÖĞ»ÒÉ«Ãè±ß£¬Ñ¡ÖĞ»ÆÉ«Ãè±ß
+        // å¡«å……å§‹ç»ˆç™½è‰²ï¼›æœªé€‰ä¸­ç°è‰²æè¾¹ï¼Œé€‰ä¸­é»„è‰²æè¾¹
         Color borderColor =
             selected
                 ? new Color(
@@ -1172,7 +1172,7 @@ public class TrackView
             new Vertex[10];
 
 
-        // ÍâÂÖÀª£¨±ß¿òÉ«£©ÉÈĞÎ
+        // å¤–è½®å»“ï¼ˆè¾¹æ¡†è‰²ï¼‰æ‰‡å½¢
         SetMarkerVertex(
             ref vertices[0],
             0f,
@@ -1204,7 +1204,7 @@ public class TrackView
             borderColor);
 
 
-        // ÄÚ²¿Ìî³ä£¨Ğ¡Ò»È¦£©ÉÈĞÎ
+        // å†…éƒ¨å¡«å……ï¼ˆå°ä¸€åœˆï¼‰æ‰‡å½¢
         SetMarkerVertex(
             ref vertices[5],
             1f,
@@ -1314,11 +1314,11 @@ public class TrackView
                 pixelsPerSecond;
 
 
-            // Èı½ÇĞÎ¼â¶Ë£¨marker ¾Ö²¿ x = 4£©¶ÔÆëÊ±¼äµã
+            // ä¸‰è§’å½¢å°–ç«¯ï¼ˆmarker å±€éƒ¨ x = 4ï¼‰å¯¹é½æ—¶é—´ç‚¹
             marker.style.left =
                 x - MarkerTipOffsetX;
 
-            // Î»ÖÃ¿¿½ü¹ìµÀµ×±ß
+            // ä½ç½®é è¿‘è½¨é“åº•è¾¹
             marker.style.top =
                 TrackHeight -
                 MarkerHeight -
@@ -1328,7 +1328,7 @@ public class TrackView
 
 
     // =========================================================
-    // Point Event Ñ¡ÖĞ±ä»¯£ºË¢ĞÂ±ê¼Ç¸ßÁÁ
+    // Point Event é€‰ä¸­å˜åŒ–ï¼šåˆ·æ–°æ ‡è®°é«˜äº®
     // =========================================================
 
     private void OnPointEventSelectionChanged(
@@ -1344,7 +1344,7 @@ public class TrackView
 
 
     // =========================================================
-    // Point Event Êı¾İ±ä»¯£ºÖØĞÂ²¼¾Ö + Ë¢ĞÂ¸ßÁÁ
+    // Point Event æ•°æ®å˜åŒ–ï¼šé‡æ–°å¸ƒå±€ + åˆ·æ–°é«˜äº®
     // =========================================================
 
     private void OnPointEventChanged(
@@ -1605,7 +1605,7 @@ public class TrackView
 
 
         // -----------------------------------------------------
-        // Add Point Event£¨ËùÓĞ¹ìµÀ¶¼¿ÉÒÔ¼ÓµãÊÂ¼ş£©
+        // Add Point Eventï¼ˆæ‰€æœ‰è½¨é“éƒ½å¯ä»¥åŠ ç‚¹äº‹ä»¶ï¼‰
         // -----------------------------------------------------
 
         EventType[] pointEventTypes =
@@ -2037,7 +2037,7 @@ public class TrackView
     // =========================================================
     // Rebuild Point Event Markers
     //
-    // ½á¹¹±ä»¯Ê±ÓÉÍâ²¿µ÷ÓÃ
+    // ç»“æ„å˜åŒ–æ—¶ç”±å¤–éƒ¨è°ƒç”¨
     // =========================================================
 
     public void RebuildPointEventMarkers()

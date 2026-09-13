@@ -320,8 +320,8 @@ public class TimeLineWindow : EditorWindow
         {
             _previewSystem.StopPreview();
 
-            // ·´×¢²á SceneView.duringSceneGui
-            // ²¢Ïú»ÙÔ¤ÀÀÊµÀı
+            // åæ³¨å†Œ SceneView.duringSceneGui
+            // å¹¶é”€æ¯é¢„è§ˆå®ä¾‹
             _previewSystem.Dispose();
 
             _previewSystem =
@@ -389,18 +389,18 @@ public class TimeLineWindow : EditorWindow
             return;
         }
 
-        // Root ¿ÉÒÔ»ñµÃ¼üÅÌ½¹µã
+        // Root å¯ä»¥è·å¾—é”®ç›˜ç„¦ç‚¹
         _root.focusable = true;
         _root.tabIndex = 0;
 
-        // Ê¹ÓÃ TrickleDown£¬±£Ö¤¼´Ê¹µ±Ç°½¹µãÔÚ
-        // Timeline ÄÚ²¿µÄÆäËû VisualElement ÉÏ£¬
-        // ¿ì½İ¼üÊÂ¼şÒ²ÄÜ´«µ½ Root¡£
+        // ä½¿ç”¨ TrickleDownï¼Œä¿è¯å³ä½¿å½“å‰ç„¦ç‚¹åœ¨
+        // Timeline å†…éƒ¨çš„å…¶ä»– VisualElement ä¸Šï¼Œ
+        // å¿«æ·é”®äº‹ä»¶ä¹Ÿèƒ½ä¼ åˆ° Rootã€‚
         _root.RegisterCallback<KeyDownEvent>(
             OnRootKeyDown,
             TrickleDown.TrickleDown);
 
-        // µã»÷ Timeline ÈÎÒâÇøÓòºó£¬°Ñ½¹µã½»¸ø Root
+        // ç‚¹å‡» Timeline ä»»æ„åŒºåŸŸåï¼ŒæŠŠç„¦ç‚¹äº¤ç»™ Root
         _root.RegisterCallback<PointerDownEvent>(
             OnRootPointerDown,
             TrickleDown.TrickleDown);
@@ -414,8 +414,8 @@ public class TimeLineWindow : EditorWindow
             return;
         }
 
-        // Èç¹ûµã»÷µÄÊÇÎÄ±¾ÊäÈë¿ò¡¢ObjectField µÈ¿Ø¼ş£¬
-        // ²»Ç¿ÖÆÇÀ×ßËüÃÇµÄ½¹µã¡£
+        // å¦‚æœç‚¹å‡»çš„æ˜¯æ–‡æœ¬è¾“å…¥æ¡†ã€ObjectField ç­‰æ§ä»¶ï¼Œ
+        // ä¸å¼ºåˆ¶æŠ¢èµ°å®ƒä»¬çš„ç„¦ç‚¹ã€‚
         if (evt.target is TextField ||
             evt.target is FloatField ||
             evt.target is IntegerField ||
@@ -524,7 +524,7 @@ public class TimeLineWindow : EditorWindow
             return;
         }
 
-        // Õ³Ìùµ½µ±Ç° Clip ºóÃæ
+        // ç²˜è´´åˆ°å½“å‰ Clip åé¢
         float pasteTime =
             selectedClip.EndTime;
 
@@ -2249,8 +2249,8 @@ public class TimeLineWindow : EditorWindow
 
     private void OnEditorUpdate()
     {
-        // Voice µÄ¡°Ò»Ö¡²¥·Å¡±ÒÀ¿¿³ÖĞøµÄ Editor Update
-        // ×Ô¶¯¼ì²âÊÇ·ñÒÑ¾­µ½´ïÍ£Ö¹Ê±¼ä¡£
+        // Voice çš„â€œä¸€å¸§æ’­æ”¾â€ä¾é æŒç»­çš„ Editor Update
+        // è‡ªåŠ¨æ£€æµ‹æ˜¯å¦å·²ç»åˆ°è¾¾åœæ­¢æ—¶é—´ã€‚
         if (_previewSystem != null)
         {
             _previewSystem.Update();

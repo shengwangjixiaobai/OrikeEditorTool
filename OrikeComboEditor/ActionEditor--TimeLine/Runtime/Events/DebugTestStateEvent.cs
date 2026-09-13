@@ -2,10 +2,10 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// µ÷ÊÔÓÃ³ÖĞøÊÂ¼ş
+/// è°ƒè¯•ç”¨æŒç»­äº‹ä»¶
 ///
-/// OnStart / OnEnd ´òÒ»ÌõÈÕÖ¾
-/// OnUpdate °´¼ä¸ô´òÈÕÖ¾£¬±ÜÃâË¢ÆÁ
+/// OnStart / OnEnd æ‰“ä¸€æ¡æ—¥å¿—
+/// OnUpdate æŒ‰é—´éš”æ‰“æ—¥å¿—ï¼Œé¿å…åˆ·å±
 /// </summary>
 [Serializable]
 public class DebugTestStateEvent

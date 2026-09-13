@@ -9,7 +9,7 @@ public class AnimationClipData
 
 
     /// <summary>
-    /// 当前 Clip 类型
+    /// 褰撳墠 Clip 绫诲瀷
     /// </summary>
     public override ClipType Type
     {
@@ -21,7 +21,7 @@ public class AnimationClipData
 
 
     /// <summary>
-    /// 刷新 Animation 数据
+    /// 鍒锋柊 Animation 鏁版嵁
     /// </summary>
     public override void RefreshData()
     {

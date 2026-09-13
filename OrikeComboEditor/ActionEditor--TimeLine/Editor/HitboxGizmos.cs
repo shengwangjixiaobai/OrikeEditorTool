@@ -2,12 +2,12 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// ÎªËùÓĞ Hitbox ×é¼ş»æÖÆ Collider Gizmo
+/// ä¸ºæ‰€æœ‰ Hitbox ç»„ä»¶ç»˜åˆ¶ Collider Gizmo
 ///
-/// Unity Ä¬ÈÏ²»ÎªÎ´Ñ¡ÖĞµÄÒş²Ø¶ÔÏó»æÖÆ Collider Gizmo
-/// ¶ø±à¼­Æ÷Ô¤ÀÀµÄ hitbox ÊµÀıÊ¹ÓÃ HideFlags.HideAndDontSave
-/// ²»»á³öÏÖÔÚ Hierarchy ÖĞ
-/// ËùÒÔÕâÀïÓÃ [DrawGizmo] Ö÷¶¯»æÖÆ
+/// Unity é»˜è®¤ä¸ä¸ºæœªé€‰ä¸­çš„éšè—å¯¹è±¡ç»˜åˆ¶ Collider Gizmo
+/// è€Œç¼–è¾‘å™¨é¢„è§ˆçš„ hitbox å®ä¾‹ä½¿ç”¨ HideFlags.HideAndDontSave
+/// ä¸ä¼šå‡ºç°åœ¨ Hierarchy ä¸­
+/// æ‰€ä»¥è¿™é‡Œç”¨ [DrawGizmo] ä¸»åŠ¨ç»˜åˆ¶
 /// </summary>
 public static class HitboxGizmos
 {
@@ -32,8 +32,8 @@ public static class HitboxGizmos
         }
 
         // =====================================================
-        // ÑÕÉ«
-        // ¼¤»îÊ±ÓÃ gizmoColor£¬Î´¼¤»îÊ±ÓÃ»ÒÉ«
+        // é¢œè‰²
+        // æ¿€æ´»æ—¶ç”¨ gizmoColorï¼Œæœªæ¿€æ´»æ—¶ç”¨ç°è‰²
         // =====================================================
 
         Color fillColor;
@@ -174,8 +174,8 @@ public static class HitboxGizmos
     // =========================================================
     // Draw Capsule
     //
-    // Unity Gizmos Ã»ÓĞÔ­Éú Capsule »æÖÆ
-    // ÓÃÁ½¸öÇò + Ò»¸öÔ²Öù½üËÆ
+    // Unity Gizmos æ²¡æœ‰åŸç”Ÿ Capsule ç»˜åˆ¶
+    // ç”¨ä¸¤ä¸ªçƒ + ä¸€ä¸ªåœ†æŸ±è¿‘ä¼¼
     // =========================================================
 
     private static void DrawCapsule(
@@ -195,7 +195,7 @@ public static class HitboxGizmos
         Vector3 center =
             capsule.center;
 
-        // Ô²Öù·½Ïò£¨X=0, Y=1, Z=2£©
+        // åœ†æŸ±æ–¹å‘ï¼ˆX=0, Y=1, Z=2ï¼‰
         Vector3 axis;
 
         Vector3 forward;
@@ -252,7 +252,7 @@ public static class HitboxGizmos
                 radius);
         }
 
-        // Ô²ÖùÓÃÒ»¸öËõ·ÅµÄÁ¢·½Ìå½üËÆ
+        // åœ†æŸ±ç”¨ä¸€ä¸ªç¼©æ”¾çš„ç«‹æ–¹ä½“è¿‘ä¼¼
         Vector3 size;
 
         if (capsule.direction == 0)

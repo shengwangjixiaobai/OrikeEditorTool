@@ -201,7 +201,7 @@ public class InspectorView : VisualElement
 
 
         // =====================================================
-        // Point Event Ñ¡ÖĞÊ±ÓÅÏÈÏÔÊ¾µãÊÂ¼şÃæ°å
+        // Point Event é€‰ä¸­æ—¶ä¼˜å…ˆæ˜¾ç¤ºç‚¹äº‹ä»¶é¢æ¿
         // =====================================================
 
         if (_controller != null &&
@@ -282,8 +282,8 @@ public class InspectorView : VisualElement
         }
 
 
-        // Hitbox / Behitbox ¹²ÓÃ
-        // £¨BehitboxClipData ¼Ì³Ğ HitboxClipData£©
+        // Hitbox / Behitbox å…±ç”¨
+        // ï¼ˆBehitboxClipData ç»§æ‰¿ HitboxClipDataï¼‰
         if (clip
             is HitboxClipData
                 hitboxClipData)
@@ -785,8 +785,8 @@ public class InspectorView : VisualElement
             clip.AttachBone ?? string.Empty;
 
         attachBoneField.tooltip =
-            "¹Ç÷ÀÃû£¨¿Õ = ½ÇÉ«¸ù£©£»µİ¹é²éÕÒ½ÇÉ« Transform Ê÷¡£" +
-            "ÀıÈç RightHand / Head / Spine02";
+            "éª¨éª¼åï¼ˆç©º = è§’è‰²æ ¹ï¼‰ï¼›é€’å½’æŸ¥æ‰¾è§’è‰² Transform æ ‘ã€‚" +
+            "ä¾‹å¦‚ RightHand / Head / Spine02";
 
         attachBoneField.RegisterValueChangedCallback(
             evt =>
@@ -856,9 +856,9 @@ public class InspectorView : VisualElement
             clip.HitboxPrefab;
 
         hitboxField.tooltip =
-            "¹ÒÔØ Hitbox ½Å±¾ + Collider µÄ GameObject¡£" +
-            "±à¼­Æ÷Ô¤ÀÀÔÚÊ±¼ä¶ÎÄÚ activate=true ²¢ collider.enabled=true£»" +
-            "ÓÎÏ·ÖĞ collider Ê¼ÖÕ enabled£¬ÓÉ activate ¾ö¶¨ÉúĞ§¡£";
+            "æŒ‚è½½ Hitbox è„šæœ¬ + Collider çš„ GameObjectã€‚" +
+            "ç¼–è¾‘å™¨é¢„è§ˆåœ¨æ—¶é—´æ®µå†… activate=true å¹¶ collider.enabled=trueï¼›" +
+            "æ¸¸æˆä¸­ collider å§‹ç»ˆ enabledï¼Œç”± activate å†³å®šç”Ÿæ•ˆã€‚";
 
         hitboxField.RegisterValueChangedCallback(
             evt =>
@@ -893,7 +893,7 @@ public class InspectorView : VisualElement
             clip.AttachBone ?? string.Empty;
 
         attachBoneField.tooltip =
-            "¹Ç÷ÀÃû£¨¿Õ = ½ÇÉ«¸ù£©£»µİ¹é²éÕÒ½ÇÉ« Transform Ê÷¡£";
+            "éª¨éª¼åï¼ˆç©º = è§’è‰²æ ¹ï¼‰ï¼›é€’å½’æŸ¥æ‰¾è§’è‰² Transform æ ‘ã€‚";
 
         attachBoneField.RegisterValueChangedCallback(
             evt =>
@@ -980,12 +980,12 @@ public class InspectorView : VisualElement
     // =========================================================
     // Is Any Input Field Focused
     //
-    // ¼ì²éµ±Ç°¾Û½¹µÄÔªËØÊÇ·ñÊÇÊäÈë×Ö¶Î
-    // £¨TextField / Vector3Field / ObjectField ¼°Æä×ÓÔªËØ£©
-    // Í¨¹ıÏòÉÏ±éÀú¸¸½ÚµãÅĞ¶Ï
+    // æ£€æŸ¥å½“å‰èšç„¦çš„å…ƒç´ æ˜¯å¦æ˜¯è¾“å…¥å­—æ®µ
+    // ï¼ˆTextField / Vector3Field / ObjectField åŠå…¶å­å…ƒç´ ï¼‰
+    // é€šè¿‡å‘ä¸Šéå†çˆ¶èŠ‚ç‚¹åˆ¤æ–­
     //
-    // Èç¹ûÕıÔÚ±à¼­ÈÎÒâÊäÈë×Ö¶Î£¬²»Ë¢ĞÂ Inspector
-    // ·ñÔò×Ö¶Î»á±» Refresh ÖØ½¨µ¼ÖÂÊ§È¥½¹µã
+    // å¦‚æœæ­£åœ¨ç¼–è¾‘ä»»æ„è¾“å…¥å­—æ®µï¼Œä¸åˆ·æ–° Inspector
+    // å¦åˆ™å­—æ®µä¼šè¢« Refresh é‡å»ºå¯¼è‡´å¤±å»ç„¦ç‚¹
     // =========================================================
 
     private bool IsAnyInputFieldFocused()
@@ -1035,10 +1035,10 @@ public class InspectorView : VisualElement
     // =========================================================
     // Is Input Field
     //
-    // ÅĞ¶ÏÔªËØÊÇ·ñÊÇÈÎÒâÀàĞÍµÄÊäÈë×Ö¶Î
+    // åˆ¤æ–­å…ƒç´ æ˜¯å¦æ˜¯ä»»æ„ç±»å‹çš„è¾“å…¥å­—æ®µ
     // TextField / FloatField / IntegerField / Toggle /
     // PopupField / EnumField / ObjectField / Vector3Field /
-    // ColorField µÈ¶¼¼Ì³Ğ×Ô BaseField<T>
+    // ColorField ç­‰éƒ½ç»§æ‰¿è‡ª BaseField<T>
     // =========================================================
 
     private static bool IsInputField(
@@ -1092,7 +1092,7 @@ public class InspectorView : VisualElement
 
 
         // =====================================================
-        // Event Type ÏÂÀ­
+        // Event Type ä¸‹æ‹‰
         // =====================================================
 
         PopupField<EventType> typePopup =
@@ -1120,7 +1120,7 @@ public class InspectorView : VisualElement
                     clip,
                     evt.newValue);
 
-                // ÀàĞÍÇĞ»»ºóÖØ½¨×Ö¶Î£¨ÑÓ³ÙÒ»Ö¡£¬±ÜÃâÏÂÀ­¹Ø±Õ¹ı³ÌÖĞÖØ½¨£©
+                // ç±»å‹åˆ‡æ¢åé‡å»ºå­—æ®µï¼ˆå»¶è¿Ÿä¸€å¸§ï¼Œé¿å…ä¸‹æ‹‰å…³é—­è¿‡ç¨‹ä¸­é‡å»ºï¼‰
                 schedule
                     .Execute(
                         Refresh)
@@ -1133,7 +1133,7 @@ public class InspectorView : VisualElement
 
 
         // =====================================================
-        // ÊÂ¼ş²ÎÊı×Ö¶Î£¨·´Éä»æÖÆ£©
+        // äº‹ä»¶å‚æ•°å­—æ®µï¼ˆåå°„ç»˜åˆ¶ï¼‰
         // =====================================================
 
         if (clip.StateEvent != null)
@@ -1245,7 +1245,7 @@ public class InspectorView : VisualElement
 
 
         // =====================================================
-        // Event Type ÏÂÀ­
+        // Event Type ä¸‹æ‹‰
         // =====================================================
 
         PopupField<EventType> typePopup =
@@ -1285,7 +1285,7 @@ public class InspectorView : VisualElement
 
 
         // =====================================================
-        // ÊÂ¼ş²ÎÊı×Ö¶Î£¨·´Éä»æÖÆ£©
+        // äº‹ä»¶å‚æ•°å­—æ®µï¼ˆåå°„ç»˜åˆ¶ï¼‰
         // =====================================================
 
         if (pointEvent.PointEvent != null)
@@ -1304,8 +1304,8 @@ public class InspectorView : VisualElement
     // =========================================================
     // Event Instance Fields
     //
-    // ·´Éä±éÀúÊÂ¼şÊµÀıµÄĞòÁĞ»¯×Ö¶Î
-    // ¸ù¾İ×Ö¶ÎÀàĞÍ´´½¨¶ÔÓ¦µÄ UI ¿Ø¼ş
+    // åå°„éå†äº‹ä»¶å®ä¾‹çš„åºåˆ—åŒ–å­—æ®µ
+    // æ ¹æ®å­—æ®µç±»å‹åˆ›å»ºå¯¹åº”çš„ UI æ§ä»¶
     // =========================================================
 
     private void CreateEventInstanceFields(
@@ -1344,7 +1344,7 @@ public class InspectorView : VisualElement
     }
 
 
-    // ×Ö¶ÎÊÇ·ñĞèÒªĞòÁĞ»¯»æÖÆ
+    // å­—æ®µæ˜¯å¦éœ€è¦åºåˆ—åŒ–ç»˜åˆ¶
     private static bool IsSerializedEventField(
         FieldInfo field)
     {
@@ -1730,7 +1730,7 @@ public class InspectorView : VisualElement
 
 
         // =====================================================
-        // ²»Ö§³ÖµÄÀàĞÍ
+        // ä¸æ”¯æŒçš„ç±»å‹
         // =====================================================
 
         Label unsupported =

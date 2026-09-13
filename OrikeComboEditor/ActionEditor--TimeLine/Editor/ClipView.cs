@@ -626,7 +626,7 @@ public class ClipView : VisualElement
                 0.25f);
         }
 
-        // Behitbox Clip£¨ÏÈÅĞ¶Ï×ÓÀà£©
+        // Behitbox Clipï¼ˆå…ˆåˆ¤æ–­å­ç±»ï¼‰
         if (ClipData is BehitboxClipData)
         {
             return new Color(
@@ -751,7 +751,7 @@ public class ClipView : VisualElement
         }
 
         // Hitbox / Behitbox
-        // £¨BehitboxClipData ¼Ì³Ğ HitboxClipData£¬¹²ÓÃ´Ë·ÖÖ§£©
+        // ï¼ˆBehitboxClipData ç»§æ‰¿ HitboxClipDataï¼Œå…±ç”¨æ­¤åˆ†æ”¯ï¼‰
         if (ClipData is HitboxClipData
             hitboxClipData)
         {

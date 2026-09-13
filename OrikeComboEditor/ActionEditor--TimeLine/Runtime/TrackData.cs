@@ -15,10 +15,10 @@ public class TrackData
         new List<BaseClipData>();
 
     /// <summary>
-    /// µãÊÂ¼şÁĞ±í
+    /// ç‚¹äº‹ä»¶åˆ—è¡¨
     ///
-    /// µãÊÂ¼ş¿ÉÒÔ¸½¼Óµ½ÈÎÒâ¹ìµÀÉÏ
-    /// ÏÔÊ¾ÎªÊ±¼äµã±ê¼Ç£¬²»ÊÇ Clip Æ¬¶Î
+    /// ç‚¹äº‹ä»¶å¯ä»¥é™„åŠ åˆ°ä»»æ„è½¨é“ä¸Š
+    /// æ˜¾ç¤ºä¸ºæ—¶é—´ç‚¹æ ‡è®°ï¼Œä¸æ˜¯ Clip ç‰‡æ®µ
     /// </summary>
     [SerializeReference]
     public List<PointEventData> PointEvents =

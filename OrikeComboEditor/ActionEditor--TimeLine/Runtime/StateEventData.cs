@@ -2,16 +2,16 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// ³ÖĞøÊÂ¼ş Clip£¨×´Ì¬ÊÂ¼ş£©
+/// æŒç»­äº‹ä»¶ Clipï¼ˆçŠ¶æ€äº‹ä»¶ï¼‰
 ///
-/// ÔÚ Clip Ê±¼ä¶ÎÄÚ³ÖĞø´¥·¢ÊÂ¼ş
-///   - ½øÈëÊ±¼ä¶Î£ºIStateEvent.OnStart()
-///   - Ê±¼ä¶ÎÄÚÃ¿Ö¡£ºIStateEvent.OnUpdate(delta)
-///   - Àë¿ªÊ±¼ä¶Î£ºIStateEvent.OnEnd()
+/// åœ¨ Clip æ—¶é—´æ®µå†…æŒç»­è§¦å‘äº‹ä»¶
+///   - è¿›å…¥æ—¶é—´æ®µï¼šIStateEvent.OnStart()
+///   - æ—¶é—´æ®µå†…æ¯å¸§ï¼šIStateEvent.OnUpdate(delta)
+///   - ç¦»å¼€æ—¶é—´æ®µï¼šIStateEvent.OnEnd()
 ///
-/// StateEvent ³ÖÓĞ EventType ºÍ¾ßÌåµÄ IStateEvent ÊµÀı
-/// Inspector ÖĞÑ¡Ôñ EventType ºó£¬Í¨¹ı EventFactory
-/// ´´½¨¶ÔÓ¦ÊÂ¼şÊµÀı£¬²¢»æÖÆÆä×Ö¶Î
+/// StateEvent æŒæœ‰ EventType å’Œå…·ä½“çš„ IStateEvent å®ä¾‹
+/// Inspector ä¸­é€‰æ‹© EventType åï¼Œé€šè¿‡ EventFactory
+/// åˆ›å»ºå¯¹åº”äº‹ä»¶å®ä¾‹ï¼Œå¹¶ç»˜åˆ¶å…¶å­—æ®µ
 /// </summary>
 [Serializable]
 public class StateEventData
@@ -20,8 +20,8 @@ public class StateEventData
     public EventType EventType;
 
     /// <summary>
-    /// ¾ßÌåµÄ³ÖĞøÊÂ¼şÊµÀı
-    /// [SerializeReference] Ö§³Ö¶àÌ¬ĞòÁĞ»¯
+    /// å…·ä½“çš„æŒç»­äº‹ä»¶å®ä¾‹
+    /// [SerializeReference] æ”¯æŒå¤šæ€åºåˆ—åŒ–
     /// </summary>
     [SerializeReference]
     public IStateEvent StateEvent;
@@ -50,8 +50,8 @@ public class StateEventData
 
 
     /// <summary>
-    /// ³ÖĞøÊÂ¼ş²»ĞèÒªÔ¤ÀÀÊı¾İ
-    /// ÓÉ ActionPreviewSystem Ö±½Óµ÷ÓÃÊÂ¼ş·½·¨
+    /// æŒç»­äº‹ä»¶ä¸éœ€è¦é¢„è§ˆæ•°æ®
+    /// ç”± ActionPreviewSystem ç›´æ¥è°ƒç”¨äº‹ä»¶æ–¹æ³•
     /// </summary>
     public override BasePreviewData
         GetPreviewDataAtTime(
@@ -62,8 +62,8 @@ public class StateEventData
 
 
     /// <summary>
-    /// ¸ù¾İ EventType ´´½¨ÊÂ¼şÊµÀı
-    /// ÓÉ Inspector / Controller µ÷ÓÃ
+    /// æ ¹æ® EventType åˆ›å»ºäº‹ä»¶å®ä¾‹
+    /// ç”± Inspector / Controller è°ƒç”¨
     /// </summary>
     public void CreateEventInstance()
     {

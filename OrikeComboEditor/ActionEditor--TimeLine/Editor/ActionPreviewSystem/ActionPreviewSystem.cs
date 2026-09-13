@@ -31,10 +31,10 @@ public class ActionPreviewSystem
     // =========================================================
     // Hitbox / Behitbox
     //
-    // ¶à¸ö hitbox ¿ÉÄÜÍ¬Ê±¼¤»î
-    // ÓÃ prefab ×÷Îª key »º´æÊµÀı
-    // Ã¿Ö¡ÏÈÈ«²¿ÖØÖÃÎª activate=false
-    // ÔÙ°´µ±Ç°¼¤»îµÄ Clip ÉèÎª true
+    // å¤šä¸ª hitbox å¯èƒ½åŒæ—¶æ¿€æ´»
+    // ç”¨ prefab ä½œä¸º key ç¼“å­˜å®ä¾‹
+    // æ¯å¸§å…ˆå…¨éƒ¨é‡ç½®ä¸º activate=false
+    // å†æŒ‰å½“å‰æ¿€æ´»çš„ Clip è®¾ä¸º true
     // =========================================================
 
     private readonly Dictionary<
@@ -48,8 +48,8 @@ public class ActionPreviewSystem
     // =========================================================
     // State Events
     //
-    // µ±Ç°ÒÑ´¥·¢ OnStart µ«Î´ OnEnd µÄ³ÖĞøÊÂ¼ş
-    // ½øÈë Clip Ê±¼ä¶ÎÊ±¼ÓÈë£¬Àë¿ªÊ±ÒÆ³ı²¢µ÷ÓÃ OnEnd
+    // å½“å‰å·²è§¦å‘ OnStart ä½†æœª OnEnd çš„æŒç»­äº‹ä»¶
+    // è¿›å…¥ Clip æ—¶é—´æ®µæ—¶åŠ å…¥ï¼Œç¦»å¼€æ—¶ç§»é™¤å¹¶è°ƒç”¨ OnEnd
     // =========================================================
 
     private readonly HashSet<
@@ -72,12 +72,12 @@ public class ActionPreviewSystem
         _actionData =
             actionData;
 
-        // Ö÷¶¯×¢²á Scene ÊÓÍ¼»æÖÆ»Øµ÷
+        // ä¸»åŠ¨æ³¨å†Œ Scene è§†å›¾ç»˜åˆ¶å›è°ƒ
         //
-        // hitbox Ô¤ÀÀÊµÀıÊ¹ÓÃ HideFlags.HideAndDontSave
-        // ²»ÔÚ Hierarchy ÖĞ£¬Unity µÄ [DrawGizmo] ×Ô¶¯·¢ÏÖ
-        // »úÖÆ²»»áÎªÕâÀà¶ÔÏóµ÷ÓÃ»æÖÆ
-        // ËùÒÔÕâÀïÓÃ duringSceneGui Ö÷¶¯±éÀú»æÖÆ
+        // hitbox é¢„è§ˆå®ä¾‹ä½¿ç”¨ HideFlags.HideAndDontSave
+        // ä¸åœ¨ Hierarchy ä¸­ï¼ŒUnity çš„ [DrawGizmo] è‡ªåŠ¨å‘ç°
+        // æœºåˆ¶ä¸ä¼šä¸ºè¿™ç±»å¯¹è±¡è°ƒç”¨ç»˜åˆ¶
+        // æ‰€ä»¥è¿™é‡Œç”¨ duringSceneGui ä¸»åŠ¨éå†ç»˜åˆ¶
         SceneView.duringSceneGui +=
             OnSceneGUI;
     }
@@ -86,7 +86,7 @@ public class ActionPreviewSystem
     // =========================================================
     // Dispose
     //
-    // ´°¿Ú¹Ø±ÕÊ±µ÷ÓÃ£¬·´×¢²á Scene »Øµ÷
+    // çª—å£å…³é—­æ—¶è°ƒç”¨ï¼Œåæ³¨å†Œ Scene å›è°ƒ
     // =========================================================
 
     public void Dispose()
@@ -181,9 +181,9 @@ public class ActionPreviewSystem
         }
 
         // =================================================
-        // Hitbox Ã¿Ö¡ÖØÖÃ
-        // °ÑËùÓĞ»º´æÊµÀıµÄ activate / collider.enabled ¹Øµô
-        // ºóÃæ PreviewTrack »á°´ĞèÖØĞÂ¼¤»î
+        // Hitbox æ¯å¸§é‡ç½®
+        // æŠŠæ‰€æœ‰ç¼“å­˜å®ä¾‹çš„ activate / collider.enabled å…³æ‰
+        // åé¢ PreviewTrack ä¼šæŒ‰éœ€é‡æ–°æ¿€æ´»
         // =================================================
 
         ResetHitboxActivation();
@@ -231,8 +231,8 @@ public class ActionPreviewSystem
         _lastActionTime =
             actionTime;
 
-        // È·±£ Scene ÊÓÍ¼ÖØ»æ
-        // ÈÃ hitbox gizmo ¼°Ê±¸üĞÂ£¨°üÀ¨ inactive ×´Ì¬£©
+        // ç¡®ä¿ Scene è§†å›¾é‡ç»˜
+        // è®© hitbox gizmo åŠæ—¶æ›´æ–°ï¼ˆåŒ…æ‹¬ inactive çŠ¶æ€ï¼‰
         SceneView.RepaintAll();
     }
 
@@ -267,8 +267,8 @@ public class ActionPreviewSystem
                 }
 
                 // =================================================
-                // State Event ³ÖĞøÊÂ¼ş
-                // ²»×ß PreviewData£¬Ö±½Óµ÷ÓÃÊÂ¼ş·½·¨
+                // State Event æŒç»­äº‹ä»¶
+                // ä¸èµ° PreviewDataï¼Œç›´æ¥è°ƒç”¨äº‹ä»¶æ–¹æ³•
                 // =================================================
 
                 if (clip is StateEventData
@@ -318,8 +318,8 @@ public class ActionPreviewSystem
 
 
         // =====================================================
-        // Point Event µãÊÂ¼ş
-        // ¼ì²â Playhead ÊÇ·ñ´©Ô½ÊÂ¼şÊ±¼äµã
+        // Point Event ç‚¹äº‹ä»¶
+        // æ£€æµ‹ Playhead æ˜¯å¦ç©¿è¶Šäº‹ä»¶æ—¶é—´ç‚¹
         // =====================================================
 
         if (track.PointEvents != null)
@@ -344,7 +344,7 @@ public class ActionPreviewSystem
     // =========================================================
     // Update State Event
     //
-    // ¸ù¾İµ±Ç°Ê±¼ä¾ö¶¨µ÷ÓÃ OnStart / OnUpdate / OnEnd
+    // æ ¹æ®å½“å‰æ—¶é—´å†³å®šè°ƒç”¨ OnStart / OnUpdate / OnEnd
     // =========================================================
 
     private void UpdateStateEvent(
@@ -373,7 +373,7 @@ public class ActionPreviewSystem
         {
             if (!active)
             {
-                // ½øÈëÊ±¼ä¶Î
+                // è¿›å…¥æ—¶é—´æ®µ
                 stateEvent
                     .StateEvent
                     .OnStart();
@@ -382,7 +382,7 @@ public class ActionPreviewSystem
                     stateEvent);
             }
 
-            // Ê±¼ä¶ÎÄÚÃ¿Ö¡¸üĞÂ
+            // æ—¶é—´æ®µå†…æ¯å¸§æ›´æ–°
             stateEvent
                 .StateEvent
                 .OnUpdate(delta);
@@ -391,7 +391,7 @@ public class ActionPreviewSystem
         {
             if (active)
             {
-                // Àë¿ªÊ±¼ä¶Î
+                // ç¦»å¼€æ—¶é—´æ®µ
                 stateEvent
                     .StateEvent
                     .OnEnd();
@@ -406,8 +406,8 @@ public class ActionPreviewSystem
     // =========================================================
     // Check Point Event
     //
-    // µ± Playhead ´©Ô½ÊÂ¼şÊ±¼äµãÊ±µ÷ÓÃ OnCall
-    // Ö§³ÖÕıÏòºÍ·´ÏòÍÏ¶¯
+    // å½“ Playhead ç©¿è¶Šäº‹ä»¶æ—¶é—´ç‚¹æ—¶è°ƒç”¨ OnCall
+    // æ”¯æŒæ­£å‘å’Œåå‘æ‹–åŠ¨
     // =========================================================
 
     private void CheckPointEvent(
@@ -426,7 +426,7 @@ public class ActionPreviewSystem
         float lastTime =
             _lastActionTime;
 
-        // Ê×´Îµ÷ÓÃ²»´¥·¢
+        // é¦–æ¬¡è°ƒç”¨ä¸è§¦å‘
         if (lastTime < 0f)
         {
             return;
@@ -434,14 +434,14 @@ public class ActionPreviewSystem
 
         bool crossed = false;
 
-        // ÕıÏò£ºlastTime < pointTime <= actionTime
+        // æ­£å‘ï¼šlastTime < pointTime <= actionTime
         if (lastTime < pointTime &&
             actionTime >= pointTime)
         {
             crossed = true;
         }
 
-        // ·´Ïò£ºactionTime <= pointTime < lastTime
+        // åå‘ï¼šactionTime <= pointTime < lastTime
         if (actionTime < pointTime &&
             lastTime >= pointTime)
         {
@@ -677,8 +677,8 @@ public class ActionPreviewSystem
     // =========================================================
     // Effect Preview
     //
-    // ÊµÀı»¯Ô¤ÖÆÌåµ½½ÇÉ«Î»ÖÃ
-    // ÓÃ ParticleSystem.Simulate °´Ê±¼ä²ÉÑùµ½Ö¸¶¨Ê±¼äµã
+    // å®ä¾‹åŒ–é¢„åˆ¶ä½“åˆ°è§’è‰²ä½ç½®
+    // ç”¨ ParticleSystem.Simulate æŒ‰æ—¶é—´é‡‡æ ·åˆ°æŒ‡å®šæ—¶é—´ç‚¹
     // =========================================================
 
     private void ApplyEffectPreview(
@@ -693,8 +693,8 @@ public class ActionPreviewSystem
         }
 
         // =====================================================
-        // ÇĞ»»Ô¤ÖÆÌå
-        // Ïú»Ù¾ÉÊµÀı£¬ÖØĞÂÊµÀı»¯
+        // åˆ‡æ¢é¢„åˆ¶ä½“
+        // é”€æ¯æ—§å®ä¾‹ï¼Œé‡æ–°å®ä¾‹åŒ–
         // =====================================================
 
         if (_currentEffectPrefab !=
@@ -716,12 +716,12 @@ public class ActionPreviewSystem
                 .SetActive(
                     true);
 
-            // ±à¼­Ä£Ê½ÏÂÊµÀı»¯µÄ ParticleSystem
-            // ±ØĞëÏÈ Play ½øÈë playing ×´Ì¬
-            // ParticleSystemRenderer ²Å»áÌî³ä / äÖÈ¾Á£×Ó
+            // ç¼–è¾‘æ¨¡å¼ä¸‹å®ä¾‹åŒ–çš„ ParticleSystem
+            // å¿…é¡»å…ˆ Play è¿›å…¥ playing çŠ¶æ€
+            // ParticleSystemRenderer æ‰ä¼šå¡«å…… / æ¸²æŸ“ç²’å­
             //
-            // Play(true) ´ø children£¬Í³Ò»²¥·ÅËùÓĞ×ÓÁ£×Ó
-            // ±à¼­Ä£Ê½²»»á×Ô¶¯ÍÆ½øÊ±¼ä£¬½ø¶ÈÓÉ Simulate ¿ØÖÆ
+            // Play(true) å¸¦ childrenï¼Œç»Ÿä¸€æ’­æ”¾æ‰€æœ‰å­ç²’å­
+            // ç¼–è¾‘æ¨¡å¼ä¸ä¼šè‡ªåŠ¨æ¨è¿›æ—¶é—´ï¼Œè¿›åº¦ç”± Simulate æ§åˆ¶
             ParticleSystem rootPS =
                 _currentEffectInstance
                     .GetComponentInChildren<
@@ -735,8 +735,8 @@ public class ActionPreviewSystem
         }
 
         // =====================================================
-        // Ã»ÓĞÊµÀı
-        // Ô¤ÀÀÊı¾İ¿ÉÄÜÔÚÖĞÍ¾¶ªÊ§ÊµÀı
+        // æ²¡æœ‰å®ä¾‹
+        // é¢„è§ˆæ•°æ®å¯èƒ½åœ¨ä¸­é€”ä¸¢å¤±å®ä¾‹
         // =====================================================
 
         if (_currentEffectInstance == null)
@@ -745,17 +745,17 @@ public class ActionPreviewSystem
         }
 
         // =====================================================
-        // ¹ÒÔØµ½Ä¿±ê¹Ç÷À
+        // æŒ‚è½½åˆ°ç›®æ ‡éª¨éª¼
         //
-        // AttachBone Îª¿Õ = ½ÇÉ«¸ù
-        // ·ñÔòµİ¹é²éÕÒ½ÇÉ« Transform Ê÷ÖĞµÚÒ»¸öÍ¬Ãû½Úµã
+        // AttachBone ä¸ºç©º = è§’è‰²æ ¹
+        // å¦åˆ™é€’å½’æŸ¥æ‰¾è§’è‰² Transform æ ‘ä¸­ç¬¬ä¸€ä¸ªåŒåèŠ‚ç‚¹
         //
         // SetParent(target, false)
-        //   ±£Áô local ±ä»»£¬¸úËæ¸¸½ÚµãÒ»ÆğÒÆ¶¯ / Ğı×ª
-        //   ÊÊºÏÎäÆ÷ / ½£¹â / ÊÖ²¿ÌØĞ§
+        //   ä¿ç•™ local å˜æ¢ï¼Œè·Ÿéšçˆ¶èŠ‚ç‚¹ä¸€èµ·ç§»åŠ¨ / æ—‹è½¬
+        //   é€‚åˆæ­¦å™¨ / å‰‘å…‰ / æ‰‹éƒ¨ç‰¹æ•ˆ
         //
         // localPosition = LocalOffset
-        //   ÔÚ¹ÒÔØµã»ù´¡ÉÏµş¼Ó¾Ö²¿Æ«ÒÆ
+        //   åœ¨æŒ‚è½½ç‚¹åŸºç¡€ä¸Šå åŠ å±€éƒ¨åç§»
         // =====================================================
 
         Transform attachTarget = null;
@@ -800,8 +800,8 @@ public class ActionPreviewSystem
         }
         else
         {
-            // Ã»ÓĞ½ÇÉ«
-            // ·Åµ½ÊÀ½çÔ­µã
+            // æ²¡æœ‰è§’è‰²
+            // æ”¾åˆ°ä¸–ç•ŒåŸç‚¹
             _currentEffectInstance
                 .transform
                 .SetParent(
@@ -815,16 +815,16 @@ public class ActionPreviewSystem
         }
 
         // =====================================================
-        // ÓÃ Simulate Ìøµ½Ö¸¶¨Ê±¼äµã
+        // ç”¨ Simulate è·³åˆ°æŒ‡å®šæ—¶é—´ç‚¹
         //
-        // ÔÚ¸ù ParticleSystem ÉÏµ÷ÓÃ
+        // åœ¨æ ¹ ParticleSystem ä¸Šè°ƒç”¨
         // withChildren = true
-        //   ÓÉ Unity ÄÚ²¿Í³Ò»Ä£ÄâËùÓĞ×ÓÁ£×Ó
-        //   ÕıÈ·´¦Àí¸¸×ÓÁ£×ÓµÄ startDelay / Ç¶Ì×¹ØÏµ
+        //   ç”± Unity å†…éƒ¨ç»Ÿä¸€æ¨¡æ‹Ÿæ‰€æœ‰å­ç²’å­
+        //   æ­£ç¡®å¤„ç†çˆ¶å­ç²’å­çš„ startDelay / åµŒå¥—å…³ç³»
         //
         // restart = true
-        //   ´Ó 0 ÖØĞÂÄ£Äâµ½ localTime
-        //   ÊÊºÏÍÏ¶¯ Playhead Ëæ»úÌø×ª
+        //   ä» 0 é‡æ–°æ¨¡æ‹Ÿåˆ° localTime
+        //   é€‚åˆæ‹–åŠ¨ Playhead éšæœºè·³è½¬
         // =====================================================
 
         ParticleSystem rootParticle =
@@ -968,7 +968,7 @@ public class ActionPreviewSystem
     // =========================================================
     // Stop State Events
     //
-    // ¶ÔËùÓĞ»î¶¯ÖĞµÄ³ÖĞøÊÂ¼şµ÷ÓÃ OnEnd
+    // å¯¹æ‰€æœ‰æ´»åŠ¨ä¸­çš„æŒç»­äº‹ä»¶è°ƒç”¨ OnEnd
     // =========================================================
 
     private void StopStateEvents()
@@ -993,9 +993,9 @@ public class ActionPreviewSystem
     // =========================================================
     // Reset Hitbox Activation
     //
-    // Ã¿Ö¡¿ªÊ¼µ÷ÓÃ
-    // °ÑËùÓĞ»º´æÊµÀıµÄ activate / collider.enabled ¹Øµô
-    // ºóÃæ ApplyHitboxPreview »á°´ĞèÖØĞÂ¼¤»î
+    // æ¯å¸§å¼€å§‹è°ƒç”¨
+    // æŠŠæ‰€æœ‰ç¼“å­˜å®ä¾‹çš„ activate / collider.enabled å…³æ‰
+    // åé¢ ApplyHitboxPreview ä¼šæŒ‰éœ€é‡æ–°æ¿€æ´»
     // =========================================================
 
     private void ResetHitboxActivation()
@@ -1033,15 +1033,15 @@ public class ActionPreviewSystem
     // =========================================================
     // Apply Hitbox Preview
     //
-    // ÔÚ Clip Ê±¼ä¶ÎÄÚ£º
-    //   - ÊµÀı»¯ / ¸´ÓÃ hitbox ÊµÀı
-    //   - ¹ÒÔØµ½Ä¿±ê¹Ç÷À
+    // åœ¨ Clip æ—¶é—´æ®µå†…ï¼š
+    //   - å®ä¾‹åŒ– / å¤ç”¨ hitbox å®ä¾‹
+    //   - æŒ‚è½½åˆ°ç›®æ ‡éª¨éª¼
     //   - activate = true
-    //   - collider.enabled = true£¨¿ÉÊÓ»¯ + Scene Gizmo ÏÔÊ¾£©
+    //   - collider.enabled = trueï¼ˆå¯è§†åŒ– + Scene Gizmo æ˜¾ç¤ºï¼‰
     //
-    // ±à¼­Æ÷Ô¤ÀÀÓÃ collider.enabled ¿ØÖÆ¿ÉÊÓ»¯
-    // ÓÎÏ·ÔËĞĞÊ± collider Ó¦Ê¼ÖÕ enabled
-    // Êµ¼ÊÉúĞ§Óë·ñÖ»¿´ Hitbox.activate
+    // ç¼–è¾‘å™¨é¢„è§ˆç”¨ collider.enabled æ§åˆ¶å¯è§†åŒ–
+    // æ¸¸æˆè¿è¡Œæ—¶ collider åº”å§‹ç»ˆ enabled
+    // å®é™…ç”Ÿæ•ˆä¸å¦åªçœ‹ Hitbox.activate
     // =========================================================
 
     private void ApplyHitboxPreview(
@@ -1054,7 +1054,7 @@ public class ActionPreviewSystem
         }
 
         // =================================================
-        // »ñÈ¡»ò´´½¨ÊµÀı
+        // è·å–æˆ–åˆ›å»ºå®ä¾‹
         // =================================================
 
         GameObject instance = null;
@@ -1079,7 +1079,7 @@ public class ActionPreviewSystem
         }
 
         // =================================================
-        // ¹ÒÔØµ½Ä¿±ê¹Ç÷À
+        // æŒ‚è½½åˆ°ç›®æ ‡éª¨éª¼
         // =================================================
 
         Transform attachTarget = null;
@@ -1137,7 +1137,7 @@ public class ActionPreviewSystem
         }
 
         // =================================================
-        // ¼¤»î
+        // æ¿€æ´»
         // =================================================
 
         Hitbox hitbox =
@@ -1148,11 +1148,11 @@ public class ActionPreviewSystem
         {
             hitbox.activate = true;
 
-            // °´ÀàĞÍÉèÖÃ Gizmo ÑÕÉ«
-            // Hitbox ºìÉ«£¬Behitbox ×ÏÉ«
+            // æŒ‰ç±»å‹è®¾ç½® Gizmo é¢œè‰²
+            // Hitbox çº¢è‰²ï¼ŒBehitbox ç´«è‰²
             //
-            // ÓÅÏÈ¿´×é¼şÀàĞÍ£¨prefab ÉÏ¹Ò Behitbox ½Å±¾£©
-            // Æä´Î¿´ Clip Êı¾İÀàĞÍ
+            // ä¼˜å…ˆçœ‹ç»„ä»¶ç±»å‹ï¼ˆprefab ä¸ŠæŒ‚ Behitbox è„šæœ¬ï¼‰
+            // å…¶æ¬¡çœ‹ Clip æ•°æ®ç±»å‹
             bool isBehitbox =
                 instance
                     .GetComponent<Behitbox>()
@@ -1196,7 +1196,7 @@ public class ActionPreviewSystem
     // =========================================================
     // Stop Hitbox
     //
-    // Ïú»ÙËùÓĞ»º´æÊµÀı
+    // é”€æ¯æ‰€æœ‰ç¼“å­˜å®ä¾‹
     // =========================================================
 
     private void StopHitboxIfNeeded()
@@ -1224,11 +1224,11 @@ public class ActionPreviewSystem
     // =========================================================
     // On Scene GUI
     //
-    // Ö÷¶¯»æÖÆËùÓĞ»º´æµÄ hitbox ÊµÀı
+    // ä¸»åŠ¨ç»˜åˆ¶æ‰€æœ‰ç¼“å­˜çš„ hitbox å®ä¾‹
     //
-    // ²»ÒÀÀµ Unity µÄ [DrawGizmo] ×Ô¶¯·¢ÏÖ
-    // ÒòÎªÔ¤ÀÀÊµÀıÊ¹ÓÃ HideFlags.HideAndDontSave
-    // ²»ÔÚ Hierarchy ÖĞ£¬Gizmo ×Ô¶¯·¢ÏÖ»áÌø¹ı
+    // ä¸ä¾èµ– Unity çš„ [DrawGizmo] è‡ªåŠ¨å‘ç°
+    // å› ä¸ºé¢„è§ˆå®ä¾‹ä½¿ç”¨ HideFlags.HideAndDontSave
+    // ä¸åœ¨ Hierarchy ä¸­ï¼ŒGizmo è‡ªåŠ¨å‘ç°ä¼šè·³è¿‡
     // =========================================================
 
     private void OnSceneGUI(
@@ -1239,7 +1239,7 @@ public class ActionPreviewSystem
             return;
         }
 
-        // ±¸·İ Handles ×´Ì¬
+        // å¤‡ä»½ Handles çŠ¶æ€
         Matrix4x4 oldMatrix =
             Handles.matrix;
 
@@ -1272,8 +1272,8 @@ public class ActionPreviewSystem
             }
 
             // =================================================
-            // ÑÕÉ«
-            // ¼¤»îÓÃ gizmoColor£¬Î´¼¤»îÓÃ»ÒÉ«
+            // é¢œè‰²
+            // æ¿€æ´»ç”¨ gizmoColorï¼Œæœªæ¿€æ´»ç”¨ç°è‰²
             // =================================================
 
             if (hitbox != null &&
@@ -1296,7 +1296,7 @@ public class ActionPreviewSystem
                 collider);
         }
 
-        // »Ö¸´ Handles ×´Ì¬
+        // æ¢å¤ Handles çŠ¶æ€
         Handles.matrix =
             oldMatrix;
 
@@ -1349,8 +1349,8 @@ public class ActionPreviewSystem
     // =========================================================
     // Draw Sphere Handles
     //
-    // Handles Ã»ÓĞÔ­Éú wire sphere
-    // »­ 3 ¸öÕı½»Ô²ÅÌÄ£Äâ
+    // Handles æ²¡æœ‰åŸç”Ÿ wire sphere
+    // ç”» 3 ä¸ªæ­£äº¤åœ†ç›˜æ¨¡æ‹Ÿ
     // =========================================================
 
     private static void
@@ -1379,19 +1379,19 @@ public class ActionPreviewSystem
         Handles.matrix =
             Matrix4x4.identity;
 
-        // XY Æ½Ãæ
+        // XY å¹³é¢
         Handles.DrawWireDisc(
             worldCenter,
             rotation * Vector3.forward,
             radius);
 
-        // XZ Æ½Ãæ
+        // XZ å¹³é¢
         Handles.DrawWireDisc(
             worldCenter,
             rotation * Vector3.up,
             radius);
 
-        // YZ Æ½Ãæ
+        // YZ å¹³é¢
         Handles.DrawWireDisc(
             worldCenter,
             rotation * Vector3.right,
@@ -1481,7 +1481,7 @@ public class ActionPreviewSystem
         Handles.matrix =
             Matrix4x4.identity;
 
-        // Á½¶Ë°ëÇò£¨ÓÃÔ²ÅÌÄ£Äâ£©
+        // ä¸¤ç«¯åŠçƒï¼ˆç”¨åœ†ç›˜æ¨¡æ‹Ÿï¼‰
         Vector3 worldSideA =
             rotation * sideA;
 
@@ -1518,7 +1518,7 @@ public class ActionPreviewSystem
             worldSideB,
             radius);
 
-        // ÖĞ¼äÔ²Öù 4 ÌõÁ¬Ïß
+        // ä¸­é—´åœ†æŸ± 4 æ¡è¿çº¿
         Handles.DrawLine(
             top + worldSideA * radius,
             bottom + worldSideA * radius);
@@ -1540,7 +1540,7 @@ public class ActionPreviewSystem
     // =========================================================
     // Deep Find
     //
-    // µİ¹é²éÕÒ Transform Ê÷ÖĞµÚÒ»¸öÍ¬Ãû½Úµã
+    // é€’å½’æŸ¥æ‰¾ Transform æ ‘ä¸­ç¬¬ä¸€ä¸ªåŒåèŠ‚ç‚¹
     // =========================================================
 
     private static Transform DeepFind(

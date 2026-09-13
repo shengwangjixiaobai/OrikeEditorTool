@@ -8,23 +8,23 @@ public class EffectClipData
     public GameObject EffectPrefab;
 
     /// <summary>
-    /// ¹ÒÔØ¹Ç÷ÀÃû
+    /// æŒ‚è½½éª¨éª¼å
     ///
-    /// ¿Õ×Ö·û´® = ¹ÒÔØµ½½ÇÉ«¸ù
-    /// ·ñÔòÓÃµİ¹é²éÕÒ½ÇÉ« Transform Ê÷ÖĞµÚÒ»¸öÍ¬Ãû½Úµã
+    /// ç©ºå­—ç¬¦ä¸² = æŒ‚è½½åˆ°è§’è‰²æ ¹
+    /// å¦åˆ™ç”¨é€’å½’æŸ¥æ‰¾è§’è‰² Transform æ ‘ä¸­ç¬¬ä¸€ä¸ªåŒåèŠ‚ç‚¹
     ///
-    /// ÀıÈç "RightHand" / "Head" / "Spine02"
+    /// ä¾‹å¦‚ "RightHand" / "Head" / "Spine02"
     /// </summary>
     public string AttachBone;
 
     /// <summary>
-    /// Ïà¶Ô¹ÒÔØµãµÄ¾Ö²¿Æ«ÒÆ
+    /// ç›¸å¯¹æŒ‚è½½ç‚¹çš„å±€éƒ¨åç§»
     /// </summary>
     public Vector3 LocalOffset;
 
 
     /// <summary>
-    /// µ±Ç° Clip ÀàĞÍ
+    /// å½“å‰ Clip ç±»å‹
     /// </summary>
     public override ClipType Type
     {
@@ -36,8 +36,8 @@ public class EffectClipData
 
 
     /// <summary>
-    /// Ë¢ĞÂ Effect Êı¾İ
-    /// È¡ÌØĞ§Ô¤ÖÆÌåÉÏËùÓĞ ParticleSystem µÄ×î³¤³ÖĞøÊ±¼ä
+    /// åˆ·æ–° Effect æ•°æ®
+    /// å–ç‰¹æ•ˆé¢„åˆ¶ä½“ä¸Šæ‰€æœ‰ ParticleSystem çš„æœ€é•¿æŒç»­æ—¶é—´
     /// </summary>
     public override void RefreshData()
     {
@@ -54,8 +54,8 @@ public class EffectClipData
             GetMaxParticleDuration(
                 EffectPrefab);
 
-        // Ã»ÓĞÈÎºÎ ParticleSystem
-        // ¸øÒ»¸öÄ¬ÈÏ³¤¶È£¬ÓÉÓÃ»§ÔÚ Inspector Àïµ÷Õû
+        // æ²¡æœ‰ä»»ä½• ParticleSystem
+        // ç»™ä¸€ä¸ªé»˜è®¤é•¿åº¦ï¼Œç”±ç”¨æˆ·åœ¨ Inspector é‡Œè°ƒæ•´
         if (maxDuration <= 0f)
         {
             maxDuration = 1f;

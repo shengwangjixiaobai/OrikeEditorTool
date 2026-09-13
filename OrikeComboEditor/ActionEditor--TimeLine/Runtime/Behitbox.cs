@@ -1,27 +1,27 @@
 using UnityEngine;
 
 /// <summary>
-/// Behitbox£¨ÊÜ»÷¿ò£©
+/// Behitboxï¼ˆå—å‡»æ¡†ï¼‰
 ///
-/// ¹ÒÔØÔÚÊÜ»÷ÅĞ¶¨ GameObject ÉÏ
-/// ÅäºÏ Unity ×Ô´ø Collider£¨½¨Òé isTrigger=true£©
+/// æŒ‚è½½åœ¨å—å‡»åˆ¤å®š GameObject ä¸Š
+/// é…åˆ Unity è‡ªå¸¦ Colliderï¼ˆå»ºè®® isTrigger=trueï¼‰
 ///
-/// Âß¼­Óë Hitbox ÍêÈ«Ò»ÖÂ£¨¼Ì³Ğ Hitbox£©
-/// Çø±ğ½öÔÚÓïÒå£º
-///   - Hitbox   = ¹¥»÷·½£¬Ö÷¶¯²úÉúÉËº¦ÅĞ¶¨
-///   - Behitbox = ÊÜ»÷·½£¬±»ÃüÖĞÊ±½ÓÊÕÅĞ¶¨
+/// é€»è¾‘ä¸ Hitbox å®Œå…¨ä¸€è‡´ï¼ˆç»§æ‰¿ Hitboxï¼‰
+/// åŒºåˆ«ä»…åœ¨è¯­ä¹‰ï¼š
+///   - Hitbox   = æ”»å‡»æ–¹ï¼Œä¸»åŠ¨äº§ç”Ÿä¼¤å®³åˆ¤å®š
+///   - Behitbox = å—å‡»æ–¹ï¼Œè¢«å‘½ä¸­æ—¶æ¥æ”¶åˆ¤å®š
 ///
-/// Õ½¶·ÏµÍ³¿ÉÒÔ£º
-///   - GetComponent<Hitbox>()    Í³Ò»´¦Àí¹¥»÷ / ÊÜ»÷
-///   - GetComponent<Behitbox>()  ½öÈ¡ÊÜ»÷¿ò
+/// æˆ˜æ–—ç³»ç»Ÿå¯ä»¥ï¼š
+///   - GetComponent<Hitbox>()    ç»Ÿä¸€å¤„ç†æ”»å‡» / å—å‡»
+///   - GetComponent<Behitbox>()  ä»…å–å—å‡»æ¡†
 ///
-/// Ä¬ÈÏ Gizmo ÑÕÉ«Îª×ÏÉ«
+/// é»˜è®¤ Gizmo é¢œè‰²ä¸ºç´«è‰²
 /// </summary>
 public class Behitbox : Hitbox
 {
     /// <summary>
-    /// ×é¼şÊ×´ÎÌí¼Ó / Reset Ê±µ÷ÓÃ£¨±à¼­Æ÷£©
-    /// °ÑÄ¬ÈÏ Gizmo ÑÕÉ«ÉèÎª×ÏÉ«
+    /// ç»„ä»¶é¦–æ¬¡æ·»åŠ  / Reset æ—¶è°ƒç”¨ï¼ˆç¼–è¾‘å™¨ï¼‰
+    /// æŠŠé»˜è®¤ Gizmo é¢œè‰²è®¾ä¸ºç´«è‰²
     /// </summary>
     private void Reset()
     {
@@ -35,7 +35,7 @@ public class Behitbox : Hitbox
 
 
     /// <summary>
-    /// ÔËĞĞÊ± / ÊµÀı»¯Ê±È·±£Ä¬ÈÏ×ÏÉ«
+    /// è¿è¡Œæ—¶ / å®ä¾‹åŒ–æ—¶ç¡®ä¿é»˜è®¤ç´«è‰²
     /// </summary>
     private void Awake()
     {

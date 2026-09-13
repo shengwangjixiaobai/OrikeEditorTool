@@ -1,36 +1,36 @@
 using UnityEngine;
 
 /// <summary>
-/// Hitbox / Behitbox Í¨ÓÃ½Å±¾
+/// Hitbox / Behitbox é€šç”¨è„šæœ¬
 ///
-/// ¹ÒÔØÔÚ hitbox GameObject ÉÏ
-/// ÅäºÏ Unity ×Ô´ø Collider£¨½¨Òé isTrigger=true ÎŞÎïÀíÅö×²£©
+/// æŒ‚è½½åœ¨ hitbox GameObject ä¸Š
+/// é…åˆ Unity è‡ªå¸¦ Colliderï¼ˆå»ºè®® isTrigger=true æ— ç‰©ç†ç¢°æ’ï¼‰
 ///
-/// activate ×Ö¶Î£º
-///   - ±à¼­Æ÷Ô¤ÀÀÊ±£ºÓÉ ActionPreviewSystem ¸ù¾İ Clip Ê±¼ä¶Î¿ª¹Ø
-///     Í¬Ê±¿ØÖÆ collider.enabled ÓÃÓÚ¿ÉÊÓ»¯
+/// activate å­—æ®µï¼š
+///   - ç¼–è¾‘å™¨é¢„è§ˆæ—¶ï¼šç”± ActionPreviewSystem æ ¹æ® Clip æ—¶é—´æ®µå¼€å…³
+///     åŒæ—¶æ§åˆ¶ collider.enabled ç”¨äºå¯è§†åŒ–
 ///
-///   - ÓÎÏ·ÔËĞĞÊ±£ºcollider Ê¼ÖÕ enabled£¨ÓÃÓÚÎïÀí¼ì²â£©
-///     activate ÓÉÕ½¶·ÏµÍ³ / ¶¯×÷ÊÂ¼ş¿ØÖÆ
-///     Êµ¼ÊÅĞ¶¨Ê±Ö»¿´ activate£¬²»¿´ collider.enabled
+///   - æ¸¸æˆè¿è¡Œæ—¶ï¼šcollider å§‹ç»ˆ enabledï¼ˆç”¨äºç‰©ç†æ£€æµ‹ï¼‰
+///     activate ç”±æˆ˜æ–—ç³»ç»Ÿ / åŠ¨ä½œäº‹ä»¶æ§åˆ¶
+///     å®é™…åˆ¤å®šæ—¶åªçœ‹ activateï¼Œä¸çœ‹ collider.enabled
 /// </summary>
 public class Hitbox : MonoBehaviour
 {
     /// <summary>
-    /// µ±Ç° hitbox ÊÇ·ñ¼¤»î
+    /// å½“å‰ hitbox æ˜¯å¦æ¿€æ´»
     ///
-    /// true  = ÉúĞ§£¬¿É±»ÅĞ¶¨
-    /// false = ²»ÉúĞ§
+    /// true  = ç”Ÿæ•ˆï¼Œå¯è¢«åˆ¤å®š
+    /// false = ä¸ç”Ÿæ•ˆ
     /// </summary>
     public bool activate = true;
 
     /// <summary>
-    /// Gizmo ÏÔÊ¾ÑÕÉ«
+    /// Gizmo æ˜¾ç¤ºé¢œè‰²
     ///
-    /// ±à¼­Æ÷Ô¤ÀÀÊ±ÓÉ ActionPreviewSystem ÉèÖÃ
-    /// £¨Hitbox ºìÉ«£¬Behitbox ×ÏÉ«£©
+    /// ç¼–è¾‘å™¨é¢„è§ˆæ—¶ç”± ActionPreviewSystem è®¾ç½®
+    /// ï¼ˆHitbox çº¢è‰²ï¼ŒBehitbox ç´«è‰²ï¼‰
     ///
-    /// ÓÎÏ·ÖĞ¿ÉÓÉÕ½¶·ÏµÍ³×Ô¶¨Òå
+    /// æ¸¸æˆä¸­å¯ç”±æˆ˜æ–—ç³»ç»Ÿè‡ªå®šä¹‰
     /// </summary>
     public Color gizmoColor =
         new Color(

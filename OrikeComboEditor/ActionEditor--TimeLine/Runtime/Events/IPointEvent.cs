@@ -1,11 +1,11 @@
 /// <summary>
-/// µãÊÂ¼ş½Ó¿Ú
+/// ç‚¹äº‹ä»¶æ¥å£
 ///
-/// ÔÚÄ³¸öÊ±¼äµã´¥·¢Ò»´Î
-///   OnCall - µ± Playhead ´©Ô½¸ÃÊ±¼äµãÊ±µ÷ÓÃÒ»´Î
+/// åœ¨æŸä¸ªæ—¶é—´ç‚¹è§¦å‘ä¸€æ¬¡
+///   OnCall - å½“ Playhead ç©¿è¶Šè¯¥æ—¶é—´ç‚¹æ—¶è°ƒç”¨ä¸€æ¬¡
 ///
-/// ÊµÏÖÀàĞèÎª [Serializable]£¬ÓÉ PointEventData Í¨¹ı
-/// [SerializeReference] ³ÖÓĞ£¬Ö§³Ö¶àÌ¬ĞòÁĞ»¯
+/// å®ç°ç±»éœ€ä¸º [Serializable]ï¼Œç”± PointEventData é€šè¿‡
+/// [SerializeReference] æŒæœ‰ï¼Œæ”¯æŒå¤šæ€åºåˆ—åŒ–
 /// </summary>
 public interface IPointEvent
 {
