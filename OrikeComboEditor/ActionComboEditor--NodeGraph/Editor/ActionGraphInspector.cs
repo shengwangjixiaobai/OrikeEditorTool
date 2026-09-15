@@ -12,9 +12,10 @@ namespace Orike.ActionGraph
     ///   Id / ActionData / Priority / Loop / KeyCommand / Cancel / BeCancel
     ///
     /// 选中 Edge 时编辑 TransitionData：
-    ///   From / To / FadeOut / FadeIn / StartPercent / Priority
+    ///   From / To / 过渡时长 / 目标起点 / 过渡起始进度 / Priority
+    ///   （归一化或按秒，可切换）
     ///
-    /// 并提供动作 / 过渡预览按钮。
+    /// 选中连线即自动预览过渡动画，也可手动停止 / 重播。
     /// </summary>
     public class ActionGraphInspector : VisualElement
     {
@@ -323,7 +324,7 @@ namespace Orike.ActionGraph
             string buttonText =
                 isPreviewing
                     ? "■ 停止动作预览"
-                    : "? 预览动作动画";
+                    : "▶ 预览动作动画";
 
             if (GUILayout.Button(
                     buttonText,
@@ -364,14 +365,17 @@ namespace Orike.ActionGraph
             SerializedProperty toProperty =
                 transitionProperty.FindPropertyRelative("To");
 
-            SerializedProperty fadeOutProperty =
-                transitionProperty.FindPropertyRelative("FadeOut");
+            SerializedProperty useFixedTimeProperty =
+                transitionProperty.FindPropertyRelative("UseFixedTime");
 
-            SerializedProperty fadeInProperty =
-                transitionProperty.FindPropertyRelative("FadeIn");
+            SerializedProperty transitionDurationProperty =
+                transitionProperty.FindPropertyRelative("TransitionDuration");
 
-            SerializedProperty startPercentProperty =
-                transitionProperty.FindPropertyRelative("StartPercent");
+            SerializedProperty timeOffsetProperty =
+                transitionProperty.FindPropertyRelative("TimeOffset");
+
+            SerializedProperty transitionTimeProperty =
+                transitionProperty.FindPropertyRelative("TransitionTime");
 
             SerializedProperty priorityProperty =
                 transitionProperty.FindPropertyRelative("Priority");
@@ -394,11 +398,20 @@ namespace Orike.ActionGraph
                     : "<空>";
 
             EditorGUILayout.LabelField(
-                "Transition (Edge)",
+                _transition.Auto
+                    ? "Auto Transition（结束自动转移）"
+                    : "Transition (Edge)",
                 EditorStyles.boldLabel);
 
             EditorGUILayout.LabelField(
                 $"{fromName}  →  {toName}");
+
+            if (_transition.Auto)
+            {
+                EditorGUILayout.HelpBox(
+                    "From 动作在末尾前自动开始向 To 过渡；不经过 Tag 匹配与优先级竞争。",
+                    MessageType.Info);
+            }
 
             EditorGUILayout.Space(4);
 
@@ -423,24 +436,58 @@ namespace Orike.ActionGraph
 
             EditorGUI.BeginChangeCheck();
 
-            fadeOutProperty.floatValue =
-                EditorGUILayout.Slider(
-                    "FadeOut（退出秒数）",
-                    fadeOutProperty.floatValue,
-                    0f,
-                    2f);
+            // 归一化 / 秒 配置模式
+            bool useFixedTime =
+                EditorGUILayout.Toggle(
+                    new GUIContent(
+                        "按秒配置",
+                        "关闭：按归一化配置（CrossFade）\n" +
+                        "开启：按秒配置（CrossFadeInFixedTime）"),
+                    useFixedTimeProperty.boolValue);
 
-            fadeInProperty.floatValue =
-                EditorGUILayout.Slider(
-                    "FadeIn（进入秒数）",
-                    fadeInProperty.floatValue,
-                    0f,
-                    2f);
+            useFixedTimeProperty.boolValue =
+                useFixedTime;
 
-            startPercentProperty.floatValue =
+            EditorGUILayout.Space(2);
+
+            string unit =
+                useFixedTime
+                    ? "（秒）"
+                    : string.Empty;
+
+            transitionDurationProperty.floatValue =
                 EditorGUILayout.Slider(
-                    "StartPercent（目标起点）",
-                    startPercentProperty.floatValue,
+                    new GUIContent(
+                        "过渡时长" + unit,
+                        useFixedTime
+                            ? "过渡时长（秒）"
+                            : "过渡时长（归一化，相对来源 / 当前动作的总时长）"),
+                    transitionDurationProperty.floatValue,
+                    0f,
+                    useFixedTime
+                        ? 5f
+                        : 1f);
+
+            timeOffsetProperty.floatValue =
+                EditorGUILayout.Slider(
+                    new GUIContent(
+                        "目标起点" + unit,
+                        useFixedTime
+                            ? "目标动画起始时间（秒）"
+                            : "目标动画起始点（归一化，相对目标动作的总时长）"),
+                    timeOffsetProperty.floatValue,
+                    0f,
+                    useFixedTime
+                        ? 10f
+                        : 1f);
+
+            transitionTimeProperty.floatValue =
+                EditorGUILayout.Slider(
+                    new GUIContent(
+                        "过渡起始进度",
+                        "过渡自身的起始进度（0~1，始终归一化）\n" +
+                        "触发过渡时直接跳到该混合状态：0 = 从头渐变，0.3 = 直接以 30% 混合开始"),
+                    transitionTimeProperty.floatValue,
                     0f,
                     1f);
 
@@ -449,19 +496,31 @@ namespace Orike.ActionGraph
 
             if (slidersChanged)
             {
-                // 滑杆直接写 floatValue，需手动登记 Undo
+                // 控件直接写序列化值，需手动登记 Undo
                 Undo.RecordObject(
                     _window.Graph,
                     "Edit Transition");
             }
 
-            EditorGUILayout.PropertyField(
-                priorityProperty,
-                new GUIContent(
-                    "Priority（额外优先级）"));
+            EditorGUILayout.HelpBox(
+                useFixedTime
+                    ? "秒模式：时长 / 起点单位为秒；进度仍为 0~1 归一化。"
+                    : "时长 ← 来源动作；起点 ← 目标动作；进度 ← 过渡自身。",
+                MessageType.None);
+
+            using (new EditorGUI.DisabledScope(
+                       _transition.Auto))
+            {
+                EditorGUILayout.PropertyField(
+                    priorityProperty,
+                    new GUIContent(
+                        "Priority（额外优先级）"));
+            }
 
             EditorGUILayout.HelpBox(
-                "最终优先级 = Action.Priority + Transition.Priority",
+                _transition.Auto
+                    ? "自动转移不参与优先级竞争，Priority 对该连线无效。"
+                    : "最终优先级 = Action.Priority + Transition.Priority",
                 MessageType.None);
 
             if (_graphSerialized.ApplyModifiedProperties() ||
@@ -504,8 +563,8 @@ namespace Orike.ActionGraph
 
             string buttonText =
                 isPreviewing
-                    ? "■ 停止过渡预览"
-                    : "? 预览动作过渡";
+                    ? "■ 停止预览"
+                    : "▶ 重新播放过渡";
 
             if (GUILayout.Button(
                     buttonText,
@@ -516,7 +575,7 @@ namespace Orike.ActionGraph
             }
 
             EditorGUILayout.HelpBox(
-                "预览中可直接拖动上方滑杆，混合效果实时刷新。",
+                "点击连线即自动预览；预览中拖动上方滑杆混合效果实时刷新，取消选中连线即停止。",
                 MessageType.None);
         }
     }

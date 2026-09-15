@@ -14,6 +14,7 @@ namespace Orike.ActionGraph
     ///   - Cancel / BeCancel 的 Tag 匹配与 Cancel Window 判断
     ///   - 最终优先级竞争，选择最优预约动作
     ///   - 执行 Transition（调用 ActionPlayer 播放目标 ActionData）
+    ///   - 自动转移：非 Loop 动作到达 Exit Time 后自动 CrossFade 到目标
     ///
     /// 切换流程：
     ///   输入 -> KeyCommand 检测 -> 创建 Reservation ->
@@ -203,7 +204,8 @@ namespace Orike.ActionGraph
         // =========================================================
 
         /// <summary>
-        /// 一帧完整流程：扫描输入 -> 清理过期预约 -> 尝试执行。
+        /// 一帧完整流程：扫描输入 -> 清理过期预约 -> 尝试执行 ->
+        /// 自动转移（Exit Time 轮询）。
         /// 也可在非自动模式下由外部手动调用。
         /// </summary>
         public void Tick()
@@ -222,6 +224,9 @@ namespace Orike.ActionGraph
             RemoveExpiredReservations();
 
             TryExecuteReservations();
+
+            // 自动转移放在最后：同帧有输入取消时输入优先
+            TryAutoTransition();
         }
 
 
@@ -568,31 +573,21 @@ namespace Orike.ActionGraph
             TransitionData transition =
                 reservation.Transition;
 
-            float fadeDuration =
-                transition != null
-                    ? transition.GetBlendDuration()
-                    : -1f;
-
-            float startPercent =
-                transition != null
-                    ? transition.StartPercent
-                    : 0f;
-
             // ActionPlayer：按 Transition 参数混合到目标 ActionData
             if (_current == null)
             {
                 player.Play(
                     target.ActionData,
                     target.Loop,
-                    startPercent);
+                    GetImmediateStartPercent(
+                        target,
+                        transition));
             }
             else
             {
-                player.CrossFade(
-                    target.ActionData,
-                    fadeDuration,
-                    target.Loop,
-                    startPercent);
+                PlayTransition(
+                    target,
+                    transition);
             }
 
 
@@ -603,6 +598,76 @@ namespace Orike.ActionGraph
                 Time.time;
 
             SwitchCurrent(target);
+        }
+
+
+        /// <summary>
+        /// 按 Transition 配置把目标动作交给播放器：
+        /// UseFixedTime 走 CrossFadeInFixedTime（秒），
+        /// 否则走 CrossFade（归一化，时长相对来源动作）。
+        /// </summary>
+        private void PlayTransition(
+            Action target,
+            TransitionData transition)
+        {
+            if (transition == null)
+            {
+                player.CrossFade(
+                    target.ActionData,
+                    -1f,
+                    target.Loop);
+
+                return;
+            }
+
+            if (transition.UseFixedTime)
+            {
+                player.CrossFadeInFixedTime(
+                    target.ActionData,
+                    transition.TransitionDuration,
+                    target.Loop,
+                    transition.TimeOffset,
+                    transition.TransitionTime);
+            }
+            else
+            {
+                player.CrossFade(
+                    target.ActionData,
+                    transition.TransitionDuration,
+                    target.Loop,
+                    transition.TimeOffset,
+                    transition.TransitionTime);
+            }
+        }
+
+
+        /// <summary>
+        /// 没有来源动作（直接 Play）时，
+        /// 把 Transition 的目标起点换算成 Play 所需的归一化值。
+        /// </summary>
+        private static float GetImmediateStartPercent(
+            Action target,
+            TransitionData transition)
+        {
+            if (transition == null)
+            {
+                return 0f;
+            }
+
+            if (!transition.UseFixedTime)
+            {
+                return transition.TimeOffset;
+            }
+
+            float duration =
+                ActionDataUtility.GetDuration(
+                    target.ActionData);
+
+            return duration > 0f
+                ? Mathf.Clamp01(
+                    transition.TimeOffset /
+                    duration)
+                : 0f;
         }
 
 
@@ -627,7 +692,7 @@ namespace Orike.ActionGraph
 
 
         // =========================================================
-        // 播放完成
+        // 播放完成 / 自动转移
         // =========================================================
 
         private void HandleActionCompleted(
@@ -641,11 +706,92 @@ namespace Orike.ActionGraph
                 return;
             }
 
+            // 非 Loop 动作：存在自动转移连线时播完即切换
+            // （兜底路径，正常情况下 Exit Time 轮询会提前触发过渡）
+            if (!_current.Loop &&
+                HasValidAutoTransition(
+                    out TransitionData transition))
+            {
+                ExecuteAutoTransition(
+                    transition);
+
+                return;
+            }
+
             if (defaultAction != null &&
                 defaultAction != _current)
             {
                 PlayImmediate(defaultAction);
             }
+        }
+
+
+        /// <summary>
+        /// 是否存在有效的“结束自动转移”连线：
+        /// 有连线、目标非空且不是自己、目标已绑定 ActionData。
+        /// </summary>
+        private bool HasValidAutoTransition(
+            out TransitionData transition)
+        {
+            transition =
+                _current != null && graph != null
+                    ? graph.GetAutoTransition(
+                        _current)
+                    : null;
+
+            return
+                transition != null &&
+                transition.To != null &&
+                transition.To != _current &&
+                transition.To.ActionData != null;
+        }
+
+
+        /// <summary>
+        /// 每帧轮询：当前非 Loop 动作播放到自动触发点时，
+        /// 提前开始向目标动作 CrossFade。
+        /// 触发点 = 来源时长 - 剩余混合时长，
+        /// 保证过渡终点恰好落在来源动作播完时。
+        /// </summary>
+        private void TryAutoTransition()
+        {
+            if (_current == null ||
+                _current.Loop ||
+                !HasValidAutoTransition(
+                    out TransitionData transition))
+            {
+                return;
+            }
+
+            if (CurrentActionTime <
+                transition.GetAutoTriggerTime(
+                    _current.ActionData))
+            {
+                return;
+            }
+
+            ExecuteAutoTransition(
+                transition);
+        }
+
+
+        /// <summary>
+        /// 按自动转移连线的参数混合到目标动作。
+        /// </summary>
+        private void ExecuteAutoTransition(
+            TransitionData transition)
+        {
+            Action target =
+                transition.To;
+
+            ClearReservations();
+
+            PlayTransition(
+                target,
+                transition);
+
+            SwitchCurrent(
+                target);
         }
     }
 }

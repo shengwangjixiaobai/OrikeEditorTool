@@ -55,7 +55,8 @@ namespace Orike.ActionGraph
 
 
         /// <summary>
-        /// 获取 From -> To 的 Transition；不存在返回 null。
+        /// 获取 From -> To 的 Tag 取消 Transition；不存在返回 null。
+        /// 自动转移连线（Auto == true）不在此列。
         /// </summary>
         public TransitionData GetTransition(
             Action from,
@@ -70,8 +71,35 @@ namespace Orike.ActionGraph
             foreach (TransitionData transition in Transitions)
             {
                 if (transition != null &&
+                    !transition.Auto &&
                     transition.From == from &&
                     transition.To == to)
+                {
+                    return transition;
+                }
+            }
+
+            return null;
+        }
+
+
+        /// <summary>
+        /// 获取 From 动作的“结束自动转移”Transition；不存在返回 null。
+        /// 每个非 Loop 动作至多有一条。
+        /// </summary>
+        public TransitionData GetAutoTransition(
+            Action from)
+        {
+            if (from == null)
+            {
+                return null;
+            }
+
+            foreach (TransitionData transition in Transitions)
+            {
+                if (transition != null &&
+                    transition.Auto &&
+                    transition.From == from)
                 {
                     return transition;
                 }
@@ -201,6 +229,44 @@ namespace Orike.ActionGraph
 
 
         /// <summary>
+        /// 创建一条 From 自然播放结束后自动切换到 To 的 Transition。
+        ///
+        /// 与 Tag 取消连线不同：
+        ///   - 不校验 Cancel / BeCancel Tag；
+        ///   - 每个 From 至多一条，已存在时返回 null；
+        ///   - From 为 Loop 动作时数据仍允许存在
+        ///     （运行时不生效，编辑器中隐藏端口与连线）。
+        /// </summary>
+        public TransitionData ConnectAuto(
+            Action from,
+            Action to)
+        {
+            if (from == null ||
+                to == null ||
+                from == to)
+            {
+                return null;
+            }
+
+            if (GetAutoTransition(from) != null)
+            {
+                return null;
+            }
+
+            TransitionData transition =
+                new TransitionData(from, to)
+                {
+                    Auto =
+                        true,
+                };
+
+            Transitions.Add(transition);
+
+            return transition;
+        }
+
+
+        /// <summary>
         /// 查找 From.BeCancels 与 To.Cancels 之间第一个匹配的 Tag。
         /// 不存在匹配时返回 null。
         /// </summary>
@@ -264,6 +330,12 @@ namespace Orike.ActionGraph
                 if (transition.From == action ||
                     transition.To == action)
                 {
+                    // 自动转移连线不依赖 Tag 配对，不能因 Tag 失配被清理
+                    if (transition.Auto)
+                    {
+                        continue;
+                    }
+
                     if (FindMatchingTag(
                             transition.From,
                             transition.To) ==
@@ -277,8 +349,9 @@ namespace Orike.ActionGraph
 
 
         /// <summary>
-        /// 删除一条 Transition。
-        /// Cancel / BeCancel 由用户手动管理，这里不再自动清理。
+        /// 删除指定的一条 Transition（按引用精确删除）。
+        /// 同一对 Action 之间可能同时存在 Tag 取消连线与自动转移连线，
+        /// 不能误删另一条。
         /// </summary>
         public bool Disconnect(
             TransitionData transition)
@@ -288,10 +361,23 @@ namespace Orike.ActionGraph
                 return false;
             }
 
-            return
-                Disconnect(
-                    transition.From,
-                    transition.To);
+            bool removed =
+                false;
+
+            for (int i = Transitions.Count - 1;
+                 i >= 0;
+                 i--)
+            {
+                if (Transitions[i] == transition)
+                {
+                    Transitions.RemoveAt(i);
+
+                    removed =
+                        true;
+                }
+            }
+
+            return removed;
         }
 
 

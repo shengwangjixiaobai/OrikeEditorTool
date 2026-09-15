@@ -12,11 +12,11 @@ namespace Orike.ActionGraph
     ///
     /// 在临时角色实例上用手动 PlayableGraph + AnimationMixer
     /// 混合“当前动作 -> 目标动作”两个 ActionData 的动画：
-    ///   LeadIn（当前动作循环） -> Fade（按 FadeOut/FadeIn 混合）
+    ///   LeadIn（来源动作播到自动触发点） -> Fade（按配置混合）
     ///   -> Hold（目标动作停留） -> 自动循环
     ///
     /// 混合过程中直接读取 TransitionData，
-    /// Inspector 中实时修改 FadeOut / FadeIn / StartPercent 会立即生效。
+    /// Inspector 中实时修改任意过渡参数（含归一化 / 秒模式）会立即生效。
     /// </summary>
     public class TransitionPreviewSystem
     {
@@ -42,7 +42,10 @@ namespace Orike.ActionGraph
         // 时间参数
         // =========================================================
 
-        private const float LeadInDuration =
+        /// <summary>
+        /// 没有连线数据时的默认等待时长（秒）。
+        /// </summary>
+        private const float DefaultLeadInDuration =
             0.8f;
 
         private const float HoldDuration =
@@ -53,9 +56,20 @@ namespace Orike.ActionGraph
         // 预览对象
         // =========================================================
 
+        /// <summary>
+        /// 原始角色对象（直接使用，不复制）。
+        /// </summary>
         private GameObject _instance;
 
         private Animator _animator;
+
+        /// <summary>
+        /// 预览开始时保存的原始 Animator 状态，
+        /// 预览结束后恢复。
+        /// </summary>
+        private bool _savedEnabled;
+
+        private RuntimeAnimatorController _savedController;
 
         private PlayableGraph _graph;
 
@@ -96,7 +110,20 @@ namespace Orike.ActionGraph
 
         private float _fadeTime;
 
+        /// <summary>
+        /// 进入 Fade 后真实流逝的时间（不受 TransitionTime 跳过部分影响），
+        /// 用于推进两个 Clip 的采样时间。
+        /// </summary>
+        private float _fadeElapsed;
+
         private float _holdTime;
+
+        /// <summary>
+        /// 来源动作是否循环：循环时 LeadIn / Fade 期间循环取帧，
+        /// 非循环时停在末尾（与运行时行为一致）。
+        /// </summary>
+        private bool _fromLoop =
+            true;
 
 
         /// <summary>
@@ -154,6 +181,9 @@ namespace Orike.ActionGraph
 
             _transition =
                 null;
+
+            _fromLoop =
+                true;
 
             _p0 =
                 CreatePausedClipPlayable(
@@ -248,6 +278,13 @@ namespace Orike.ActionGraph
             _transition =
                 transition;
 
+            // 来源动作循环时 LeadIn 用固定展示时长，
+            // 非循环的自动转移按“触发点”实时计算（见 GetLeadInThreshold）
+            _fromLoop =
+                transition == null ||
+                transition.From == null ||
+                transition.From.Loop;
+
             _p0 =
                 CreatePausedClipPlayable(
                     clip0);
@@ -274,19 +311,29 @@ namespace Orike.ActionGraph
                 _mixer,
                 1);
 
-            // 目标动作先定位到 StartPercent
+            // 目标动作先定位到配置的起始点（归一化 / 秒均换算为秒）
             _p1.SetTime(
-                GetStartPercent() *
-                clip1.length);
+                GetStartOffsetSeconds());
 
-            SetWeights(
-                1f,
-                0f);
+            // 过渡从配置的“自身起始进度”直接开始
+            float fadeDuration =
+                GetFadeDuration();
 
-            _time =
-                0f;
+            float transitionTime =
+                GetTransitionTime();
 
             _fadeTime =
+                transitionTime *
+                fadeDuration;
+
+            _fadeElapsed =
+                0f;
+
+            SetWeights(
+                1f - transitionTime,
+                transitionTime);
+
+            _time =
                 0f;
 
             _holdTime =
@@ -427,9 +474,13 @@ namespace Orike.ActionGraph
                 0f);
 
             if (_time >=
-                LeadInDuration)
+                GetLeadInThreshold())
             {
                 _fadeTime =
+                    GetTransitionTime() *
+                    GetFadeDuration();
+
+                _fadeElapsed =
                     0f;
 
                 _phase =
@@ -444,33 +495,27 @@ namespace Orike.ActionGraph
             _fadeTime +=
                 deltaTime;
 
-            float fadeOut =
-                GetFadeOut();
+            _fadeElapsed +=
+                deltaTime;
 
-            float fadeIn =
-                GetFadeIn();
-
-            float weightOut =
-                1f -
-                Mathf.Clamp01(
-                    _fadeTime /
-                    fadeOut);
-
+            // 权重不低于配置的过渡起始进度，
+            // 拖动 TransitionTime 滑条时可实时看到效果
             float weightIn =
-                Mathf.Clamp01(
-                    _fadeTime /
-                    fadeIn);
+                Mathf.Max(
+                    GetTransitionTime(),
+                    Mathf.Clamp01(
+                        _fadeTime /
+                        GetFadeDuration()));
 
             ApplyNormalizedWeights(
-                weightOut,
+                1f - weightIn,
                 weightIn);
 
             UpdateFromClipTime();
 
             UpdateToClipTime();
 
-            if (weightOut <= 0f &&
-                weightIn >= 1f)
+            if (weightIn >= 1f)
             {
                 _holdTime =
                     0f;
@@ -520,15 +565,30 @@ namespace Orike.ActionGraph
             float length =
                 _p0.GetAnimationClip().length;
 
-            if (length > 0f)
+            if (length <= 0f)
             {
-                _p0.SetTime(
-                    Mathf.Repeat(
-                        LeadInDuration > 0f && _phase == Phase.Fade
-                            ? LeadInDuration + _fadeTime
-                            : _time,
-                        length));
+                return;
             }
+
+            float time =
+                _phase == Phase.Fade
+                    ? GetLeadInThreshold() + _fadeElapsed
+                    : _time;
+
+            // 来源动作循环时循环取帧；
+            // 非循环时停在末尾，与运行时的自动触发行为一致
+            time =
+                _fromLoop
+                    ? Mathf.Repeat(
+                        time,
+                        length)
+                    : Mathf.Clamp(
+                        time,
+                        0f,
+                        length);
+
+            _p0.SetTime(
+                time);
         }
 
 
@@ -543,15 +603,13 @@ namespace Orike.ActionGraph
                 _p1.GetAnimationClip();
 
             float start =
-                GetStartPercent() *
-                clip.length;
+                GetStartOffsetSeconds();
 
-            float elapsed =
-                _fadeTime;
-
+            // 从目标起点开始按真实时间推进，
+            // 不被 TransitionTime 跳过的过渡部分快进
             float time =
                 start +
-                elapsed;
+                _fadeElapsed;
 
             if (clip.length > 0f)
             {
@@ -593,38 +651,116 @@ namespace Orike.ActionGraph
         // Transition 参数（实时读取，Inspector 改完立即生效）
         // =========================================================
 
-        private float GetFadeOut()
+        /// <summary>
+        /// 实际混合时长（秒）。
+        /// 归一化模式 = TransitionDuration × 来源 Clip 长度；
+        /// 秒模式直接取秒。
+        /// </summary>
+        private float GetFadeDuration()
         {
-            float value =
+            if (_transition != null &&
+                _transition.UseFixedTime)
+            {
+                return Mathf.Max(
+                    0.0001f,
+                    _transition.TransitionDuration);
+            }
+
+            float normalized =
                 _transition != null
-                    ? _transition.FadeOut
+                    ? Mathf.Clamp01(
+                        _transition.TransitionDuration)
                     : 0.25f;
 
-            return value > 0.0001f
-                ? value
-                : 0.0001f;
+            float length =
+                _hasP0
+                    ? _p0.GetAnimationClip().length
+                    : 0f;
+
+            return Mathf.Max(
+                0.0001f,
+                normalized *
+                length);
         }
 
 
-        private float GetFadeIn()
+        /// <summary>
+        /// 目标动画起始点（秒）。
+        /// 归一化模式 = TimeOffset × 目标 Clip 长度；
+        /// 秒模式直接取秒。
+        /// </summary>
+        private float GetStartOffsetSeconds()
         {
-            float value =
-                _transition != null
-                    ? _transition.FadeIn
-                    : 0.25f;
+            if (!_hasP1)
+            {
+                return 0f;
+            }
 
-            return value > 0.0001f
-                ? value
-                : 0.0001f;
+            float length =
+                _p1.GetAnimationClip().length;
+
+            if (_transition == null)
+            {
+                return 0f;
+            }
+
+            float seconds =
+                _transition.UseFixedTime
+                    ? Mathf.Max(
+                        0f,
+                        _transition.TimeOffset)
+                    : Mathf.Clamp01(
+                        _transition.TimeOffset) *
+                      length;
+
+            return Mathf.Clamp(
+                seconds,
+                0f,
+                length);
         }
 
 
-        private float GetStartPercent()
+        /// <summary>
+        /// 过渡自身的起始进度（0 ~ 1，始终归一化）。
+        /// </summary>
+        private float GetTransitionTime()
         {
             return _transition != null
                 ? Mathf.Clamp01(
-                    _transition.StartPercent)
+                    _transition.TransitionTime)
                 : 0f;
+        }
+
+
+        /// <summary>
+        /// LeadIn 持续时长（秒）。
+        ///
+        /// 非 Loop 来源的自动转移：来源结束时刻 - 剩余混合时长，
+        /// 与运行时 GetAutoTriggerTime 的计算保持一致；
+        /// 其余情况（Tag 取消预览 / Loop 来源）使用固定展示时长。
+        /// </summary>
+        private float GetLeadInThreshold()
+        {
+            if (_transition == null ||
+                !_transition.Auto ||
+                _fromLoop ||
+                !_hasP0)
+            {
+                return DefaultLeadInDuration;
+            }
+
+            float sourceLength =
+                _p0.GetAnimationClip().length;
+
+            float threshold =
+                sourceLength -
+                (1f - GetTransitionTime()) *
+                GetFadeDuration();
+
+            return Mathf.Clamp(
+                threshold,
+                0f,
+                sourceLength);
         }
 
 
@@ -673,46 +809,29 @@ namespace Orike.ActionGraph
             if (_instance != null &&
                 _sourceCharacter == character)
             {
-                EnsureAnimator();
-
                 return;
             }
 
-            DestroyInstance();
+            // 切换角色时先恢复旧角色
+            RestoreInstance();
 
+            // 直接使用原始角色对象，不复制
             _instance =
-                Object.Instantiate(
-                    character);
-
-            _instance.name =
-                "[TransitionPreview] " +
-                character.name;
-
-            _instance.hideFlags =
-                HideFlags.HideAndDontSave;
-
-            _instance.transform.position =
-                Vector3.zero;
+                character;
 
             _sourceCharacter =
                 character;
 
-            foreach (Transform child
-                     in _instance.GetComponentsInChildren<Transform>(true))
-            {
-                child.gameObject.hideFlags =
-                    HideFlags.HideAndDontSave;
-            }
-
             EnsureAnimator();
 
-
-            // 预览图的输出目标切换到新 Animator
-            if (_graphCreated)
+            // 预览图的输出目标切换到当前 Animator
+            if (_graphCreated &&
+                _graph.IsValid())
             {
                 AnimationPlayableOutput output =
-                    (AnimationPlayableOutput)_graph.GetOutputByType<AnimationPlayableOutput>(
-                        0);
+                    (AnimationPlayableOutput)
+                        _graph.GetOutputByType<AnimationPlayableOutput>(
+                            0);
 
                 if (output.IsOutputValid())
                 {
@@ -725,6 +844,11 @@ namespace Orike.ActionGraph
 
         private void EnsureAnimator()
         {
+            if (_instance == null)
+            {
+                return;
+            }
+
             _animator =
                 _instance.GetComponent<Animator>();
 
@@ -733,22 +857,53 @@ namespace Orike.ActionGraph
                 _animator =
                     _instance.AddComponent<Animator>();
             }
+
+            // 保存原始 Animator 状态，预览结束后恢复
+            _savedEnabled =
+                _animator.enabled;
+
+            _savedController =
+                _animator.runtimeAnimatorController;
+
+            // 预览期间禁用原 Animator 的控制器，
+            // 由 PlayableGraph 接管
+            _animator.enabled =
+                true;
+
+            _animator.runtimeAnimatorController =
+                null;
+        }
+
+
+        /// <summary>
+        /// 恢复角色对象到预览前的状态。
+        /// </summary>
+        private void RestoreInstance()
+        {
+            if (_instance != null &&
+                _animator != null)
+            {
+                _animator.runtimeAnimatorController =
+                    _savedController;
+
+                _animator.enabled =
+                    _savedEnabled;
+            }
+
+            _instance =
+                null;
+
+            _animator =
+                null;
+
+            _savedController =
+                null;
         }
 
 
         private void DestroyInstance()
         {
-            if (_instance != null)
-            {
-                Object.DestroyImmediate(
-                    _instance);
-
-                _instance =
-                    null;
-            }
-
-            _animator =
-                null;
+            RestoreInstance();
         }
 
 

@@ -324,25 +324,48 @@ namespace Orike.ActionGraph
                 return null;
             }
 
-            // 查找 From.BeCancels 与 To.Cancels 之间匹配的 Tag，
-            // 用它定位连线两端的端口。没有匹配 Tag 时不创建连线视图。
-            string tag =
-                _graph != null
-                    ? _graph.FindMatchingTag(
-                        transition.From,
-                        transition.To)
-                    : null;
+            Port outputPort;
 
-            if (string.IsNullOrEmpty(tag))
+            Port inputPort;
+
+            if (transition.Auto)
             {
-                return null;
+                // Loop 动作的自动转移端口被隐藏，
+                // 数据保留但暂不显示连线，取消 Loop 后重建恢复。
+                if (transition.From == null ||
+                    transition.From.Loop)
+                {
+                    return null;
+                }
+
+                outputPort =
+                    fromNode.AutoOutputPort;
+
+                inputPort =
+                    toNode.AutoInputPort;
             }
+            else
+            {
+                // 查找 From.BeCancels 与 To.Cancels 之间匹配的 Tag，
+                // 用它定位连线两端的端口。没有匹配 Tag 时不创建连线视图。
+                string tag =
+                    _graph != null
+                        ? _graph.FindMatchingTag(
+                            transition.From,
+                            transition.To)
+                        : null;
 
-            Port outputPort =
-                fromNode.GetOutputPort(tag);
+                if (string.IsNullOrEmpty(tag))
+                {
+                    return null;
+                }
 
-            Port inputPort =
-                toNode.GetInputPort(tag);
+                outputPort =
+                    fromNode.GetOutputPort(tag);
+
+                inputPort =
+                    toNode.GetInputPort(tag);
+            }
 
             if (outputPort == null ||
                 inputPort == null)
@@ -387,7 +410,9 @@ namespace Orike.ActionGraph
                 .Where(
                     port =>
                         port.direction != startPort.direction &&
-                        port.node != startPort.node)
+                        port.node != startPort.node &&
+                        // Tag 端口(bool)与自动转移端口(Action)禁止混连
+                        port.portType == startPort.portType)
                 .ToList();
         }
 
@@ -545,6 +570,19 @@ namespace Orike.ActionGraph
                     Action to =
                         toNode.Action;
 
+                    // 自动转移端口之间的连线走独立逻辑（不校验 Tag）
+                    if (ActionNodeView.IsAutoPort(edge.output) ||
+                        ActionNodeView.IsAutoPort(edge.input))
+                    {
+                        TryCreateAutoEdge(
+                            edge,
+                            from,
+                            to,
+                            accepted);
+
+                        continue;
+                    }
+
                     // 取出连线两端端口对应的 BeCancel / Cancel，
                     // 校验 Tag 是否一致。占位端口（userData 为 null）不允许连线。
                     BeCancelData fromBeCancel =
@@ -646,6 +684,88 @@ namespace Orike.ActionGraph
             }
 
             return change;
+        }
+
+
+        /// <summary>
+        /// 处理“结束自动转移”端口上的新建连线。
+        /// 不需要 Tag 匹配，但要求两端都是自动端口、
+        /// From 非 Loop，且每个 From 至多一条。
+        /// </summary>
+        private void TryCreateAutoEdge(
+            Edge edge,
+            Action from,
+            Action to,
+            List<Edge> accepted)
+        {
+            if (!ActionNodeView.IsAutoPort(edge.output) ||
+                !ActionNodeView.IsAutoPort(edge.input) ||
+                edge.output.direction != Direction.Output ||
+                edge.input.direction != Direction.Input)
+            {
+                RejectEdge(
+                    edge);
+
+                _window?.ShowNotification(
+                    new GUIContent(
+                        "连接失败：自动转移端口只能连到自动转入端口"));
+
+                return;
+            }
+
+            if (from.Loop)
+            {
+                RejectEdge(
+                    edge);
+
+                _window?.ShowNotification(
+                    new GUIContent(
+                        "连接失败：Loop 动作结束后重播自己，无需自动转移"));
+
+                return;
+            }
+
+            if (_graph.GetAutoTransition(from) != null)
+            {
+                RejectEdge(
+                    edge);
+
+                _window?.ShowNotification(
+                    new GUIContent(
+                        "连接失败：该动作已配置结束自动转移目标"));
+
+                return;
+            }
+
+            ActionGraphAssetOps.RecordGraphStructureUndo(
+                _graph,
+                from,
+                to,
+                "Connect Auto Transition");
+
+            TransitionData created =
+                _graph.ConnectAuto(
+                    from,
+                    to);
+
+            if (created == null)
+            {
+                RejectEdge(
+                    edge);
+
+                return;
+            }
+
+            ActionGraphAssetOps.SetGraphAndActionsDirty(
+                _graph,
+                from,
+                to);
+
+            edge.userData =
+                created;
+
+            accepted.Add(
+                edge);
         }
 
 

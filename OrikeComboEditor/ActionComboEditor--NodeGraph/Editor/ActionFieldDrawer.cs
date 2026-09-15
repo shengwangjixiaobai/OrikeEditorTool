@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -7,11 +9,14 @@ namespace Orike.ActionGraph
     /// <summary>
     /// 共享的 Action 字段绘制逻辑，供右侧 Inspector 与节点内嵌编辑器复用。
     ///
-    /// 负责绘制：
+    /// Inspector（showCancelLists = true）：
     ///   Id / ActionData / Priority / Loop /
-    ///   KeyCommands / Cancels / BeCancels
+    ///   KeyCommands（可编辑） / Cancels / BeCancels
     ///
-    /// 同时处理 Id 唯一性校验与 Id 改名后的自动 Tag 联动。
+    /// 节点（showCancelLists = false）：
+    ///   Id / ActionData / Priority / Loop 可编辑，
+    ///   KeyCommands 仅只读展示按键要求（搓招序列 + 时间窗口），
+    ///   配置统一在 Inspector 中进行。
     /// </summary>
     public static class ActionFieldDrawer
     {
@@ -142,16 +147,17 @@ namespace Orike.ActionGraph
 
             EditorGUILayout.Space(4);
 
-            EditorGUILayout.LabelField(
-                "输入条件 KeyCommand",
-                EditorStyles.boldLabel);
-
-            EditorGUILayout.PropertyField(
-                commandsProperty,
-                true);
-
             if (showCancelLists)
             {
+                // Inspector：KeyCommands 可编辑
+                EditorGUILayout.LabelField(
+                    "输入条件 KeyCommand",
+                    EditorStyles.boldLabel);
+
+                EditorGUILayout.PropertyField(
+                    commandsProperty,
+                    true);
+
                 EditorGUILayout.Space(4);
 
                 EditorGUILayout.LabelField(
@@ -174,7 +180,10 @@ namespace Orike.ActionGraph
             }
             else
             {
-                // 节点内嵌编辑器下 KeyCommand 是最后一项，
+                // 节点：KeyCommands 只读展示，不提供编辑入口
+                DrawKeyCommandsReadOnly(
+                    action);
+
                 // 预留与节点底边的间距，避免贴边。
                 EditorGUILayout.Space(8);
             }
@@ -184,6 +193,9 @@ namespace Orike.ActionGraph
             // 应用改动
             // ---------------------------------------------------------
 
+            // 不在每帧 IMGUI 调用中立即写磁盘，
+            // 仅标记 Dirty，避免输入 Id 时每个字符都触发
+            // AssetDatabase.SaveAssetIfDirty 导致的 IO 卡顿。
             bool changed =
                 serialized.ApplyModifiedProperties();
 
@@ -201,12 +213,6 @@ namespace Orike.ActionGraph
 
                 EditorUtility.SetDirty(
                     action);
-
-                if (graph != null)
-                {
-                    AssetDatabase.SaveAssetIfDirty(
-                        graph);
-                }
             }
 
             bool structural =
@@ -217,6 +223,68 @@ namespace Orike.ActionGraph
             return new Result(
                 changed,
                 structural);
+        }
+
+
+        // =========================================================
+        // 节点只读：按键要求
+        // =========================================================
+
+        /// <summary>
+        /// 在节点内只读展示该动作的按键要求。
+        ///
+        /// 每条 KeyCommand 是一组“搓招序列”（key 按顺序输入），
+        /// 需要在 timeLimit 时间窗口内完成；
+        /// 多条 KeyCommand 之间是“或”关系，满足任意一条即可触发。
+        /// </summary>
+        private static void DrawKeyCommandsReadOnly(
+            Action action)
+        {
+            EditorGUILayout.LabelField(
+                "按键要求",
+                EditorStyles.boldLabel);
+
+            List<KeyCommand> commands =
+                action.KeyCommands;
+
+            if (commands == null ||
+                commands.Count == 0)
+            {
+                EditorGUILayout.LabelField(
+                    "无");
+
+                return;
+            }
+
+            foreach (KeyCommand command in commands)
+            {
+                if (command == null ||
+                    command.key == null ||
+                    command.key.Length == 0)
+                {
+                    continue;
+                }
+
+                // 顺序输入序列用 → 连接，例如：↓ → ↘ → → + A
+                string sequence =
+                    string.Join(
+                        "  →  ",
+                        command.key.Select(
+                            key => KeyMapGlyph.GetGlyph(
+                                key)));
+
+                // 整行绘制（窗口时限附在末尾），
+                // 避免窄节点下 LabelField 双列截断序列
+                string window =
+                    command.timeLimit > 0f
+                        ? $"  （{command.timeLimit:0.##}s 内）"
+                        : "  （无时限）";
+
+                EditorGUILayout.LabelField(
+                    sequence +
+                    window,
+                    EditorStyles.miniLabel);
+            }
         }
 
 
@@ -266,6 +334,16 @@ namespace Orike.ActionGraph
                         ',');
                 }
             }
+
+            // Loop 决定“结束自动转移”输出端口是否显示，
+            // 改变时必须按结构变更整体重建。
+            builder.Append(
+                '|');
+
+            builder.Append(
+                action.Loop
+                    ? 'L'
+                    : 'N');
 
             return builder.ToString();
         }

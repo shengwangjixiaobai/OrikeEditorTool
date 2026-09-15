@@ -300,7 +300,7 @@ public class TimeLineWindow : EditorWindow
         StyleSheet styleSheet =
             AssetDatabase.LoadAssetAtPath<
                 StyleSheet>(
-                    "Assets/GameLogic/OrikeScript/OrikeComboEditor/ActionEditor--TimeLine/Editor/TimeLineWindow.uss");
+                    "Assets/Script/OrikeScript/OrikeComboEditor/ActionEditor--TimeLine/Editor/TimeLineWindow.uss");
 
         if (styleSheet != null)
         {
@@ -832,7 +832,7 @@ public class TimeLineWindow : EditorWindow
 
         _playButton =
             CreatePlaybackButton(
-                "Play");
+                "▶");
 
         _playButton.tooltip =
             "Play / Pause";

@@ -18,6 +18,12 @@ namespace Orike.ActionGraph
         private const float ToolbarHeight =
             38f;
 
+        /// <summary>
+        /// 窗口样式表：分隔条光标等 UI 样式。
+        /// </summary>
+        private const string UssPath =
+            "Assets/Script/OrikeScript/OrikeComboEditor/ActionComboEditor--NodeGraph/Editor/ActionComboEditor.uss";
+
 
         // =========================================================
         // 组件
@@ -40,6 +46,15 @@ namespace Orike.ActionGraph
         private object _previewKey;
 
         private double _lastEditorTime;
+
+        /// <summary>
+        /// 延迟自动保存计时器（秒）。
+        /// 避免编辑字段时每个字符都触发 SaveAssetIfDirty。
+        /// </summary>
+        private float _autoSaveTimer;
+
+        private const float AutoSaveInterval =
+            2f;
 
 
         // =========================================================
@@ -104,6 +119,8 @@ namespace Orike.ActionGraph
 
         private void CreateGUI()
         {
+            ApplyStyleSheet();
+
             BuildToolbar();
 
             BuildContent();
@@ -113,6 +130,24 @@ namespace Orike.ActionGraph
 
             _lastEditorTime =
                 EditorApplication.timeSinceStartup;
+        }
+
+
+        /// <summary>
+        /// 加载 ActionComboEditor.uss（分隔条光标等样式）。
+        /// </summary>
+        private void ApplyStyleSheet()
+        {
+            StyleSheet styleSheet =
+                AssetDatabase.LoadAssetAtPath<
+                    StyleSheet>(
+                        UssPath);
+
+            if (styleSheet != null)
+            {
+                rootVisualElement.styleSheets.Add(
+                    styleSheet);
+            }
         }
 
 
@@ -376,9 +411,10 @@ namespace Orike.ActionGraph
             splitter.style.flexShrink =
                 0f;
 
-            splitter.style.cursor =
-                new StyleCursor(
-                    GetHorizontalResizeCursor());
+            // 水平双向箭头光标由 ActionComboEditor.uss 的
+            // .timeline-splitter 规则提供
+            splitter.AddToClassList(
+                "timeline-splitter");
 
             splitter.style.backgroundColor =
                 new Color(
@@ -500,194 +536,6 @@ namespace Orike.ActionGraph
 
 
         // =========================================================
-        // 分隔条光标纹理
-        // =========================================================
-
-        private static Texture2D _resizeCursor;
-
-        /// <summary>
-        /// 生成一个水平双向箭头光标纹理（左右拖拽）。
-        /// </summary>
-        private static UnityEngine.UIElements.Cursor GetHorizontalResizeCursor()
-        {
-            if (_resizeCursor == null)
-            {
-                _resizeCursor =
-                    CreateHorizontalResizeTexture();
-            }
-
-            return
-                new UnityEngine.UIElements.Cursor
-                {
-                    texture =
-                        _resizeCursor,
-
-                    hotspot =
-                        new Vector2(
-                            _resizeCursor.width * 0.5f,
-                            _resizeCursor.height * 0.5f),
-                };
-        }
-
-
-        private static Texture2D CreateHorizontalResizeTexture()
-        {
-            const int size =
-                20;
-
-            Texture2D texture =
-                new Texture2D(
-                    size,
-                    size,
-                    TextureFormat.RGBA32,
-                    false);
-
-            texture.name =
-                "ResizeHorizontalCursor";
-
-            Color[] pixels =
-                new Color[size * size];
-
-            for (int i = 0;
-                 i < pixels.Length;
-                 i++)
-            {
-                pixels[i] =
-                    new Color(
-                        0f,
-                        0f,
-                        0f,
-                        0f);
-            }
-
-            int mid =
-                size / 2;
-
-            Color dark =
-                new Color(
-                    0.15f,
-                    0.15f,
-                    0.15f,
-                    1f);
-
-            Color white =
-                Color.white;
-
-            void Plot(
-                int x,
-                int y,
-                Color color)
-            {
-                if (x >= 0 &&
-                    x < size &&
-                    y >= 0 &&
-                    y < size)
-                {
-                    pixels[y * size + x] =
-                        color;
-                }
-            }
-
-
-            // 中心横条（粗黑边 + 白芯）
-            for (int x = 1;
-                 x < size - 1;
-                 x++)
-            {
-                for (int t = -2;
-                     t <= 2;
-                     t++)
-                {
-                    Plot(
-                        x,
-                        mid + t,
-                        dark);
-                }
-
-                Plot(
-                    x,
-                    mid,
-                    white);
-            }
-
-
-            // 左箭头（黑边 + 白芯）
-            for (int i = 0;
-                 i < 4;
-                 i++)
-            {
-                for (int j = -i;
-                     j <= i;
-                     j++)
-                {
-                    Plot(
-                        3 + i,
-                        mid + j,
-                        dark);
-                }
-            }
-
-            for (int i = 0;
-                 i < 3;
-                 i++)
-            {
-                for (int j = -i;
-                     j <= i;
-                     j++)
-                {
-                    Plot(
-                        3 + i,
-                        mid + j,
-                        white);
-                }
-            }
-
-
-            // 右箭头（黑边 + 白芯）
-            for (int i = 0;
-                 i < 4;
-                 i++)
-            {
-                for (int j = -i;
-                     j <= i;
-                     j++)
-                {
-                    Plot(
-                        size - 4 - i,
-                        mid + j,
-                        dark);
-                }
-            }
-
-            for (int i = 0;
-                 i < 3;
-                 i++)
-            {
-                for (int j = -i;
-                     j <= i;
-                     j++)
-                {
-                    Plot(
-                        size - 4 - i,
-                        mid + j,
-                        white);
-                }
-            }
-
-
-            texture.SetPixels(
-                pixels);
-
-            texture.alphaIsTransparency =
-                true;
-
-            texture.Apply();
-
-            return texture;
-        }
-
-
-        // =========================================================
         // 工具栏事件
         // =========================================================
 
@@ -761,6 +609,14 @@ namespace Orike.ActionGraph
             if (_graphView == null)
             {
                 return;
+            }
+
+            // 切换 / 重建资产时停止旧预览，
+            // 避免重建过程中选中变化残留的过渡预览
+            if (_preview != null &&
+                _preview.IsRunning)
+            {
+                StopPreview();
             }
 
             if (graph != null)
@@ -872,12 +728,78 @@ namespace Orike.ActionGraph
                 return;
             }
 
+            StartTransitionPreview(
+                transition,
+                true);
+        }
+
+
+        /// <summary>
+        /// 选中连线时自动触发过渡预览（不弹警告框）。
+        /// 已经在预览同一条连线时保持现状；
+        /// 未指定预览角色或任一端未绑定 ActionData 时静默跳过。
+        /// </summary>
+        public void PreviewTransitionFromSelection(
+            TransitionData transition)
+        {
+            if (transition == null)
+            {
+                return;
+            }
+
+            if (IsPreviewingTransition(
+                    transition))
+            {
+                return;
+            }
+
+            StartTransitionPreview(
+                transition,
+                false);
+        }
+
+
+        /// <summary>
+        /// 取消选中连线时停止“自动预览”。
+        /// 只停止 Transition 预览，不影响通过节点按钮启动的单动作预览。
+        /// </summary>
+        public void StopAutoTransitionPreview()
+        {
+            if (_previewKey is TransitionData)
+            {
+                StopPreview();
+            }
+        }
+
+
+        /// <summary>
+        /// 启动过渡预览的共用入口。
+        /// </summary>
+        /// <param name="showWarning">
+        /// 手动点击按钮时为 true（缺角色弹框提示）；
+        /// 选中连线自动触发时为 false（静默跳过）。
+        /// </param>
+        private void StartTransitionPreview(
+            TransitionData transition,
+            bool showWarning)
+        {
+            if (transition.From == null ||
+                transition.To == null ||
+                transition.From.ActionData == null ||
+                transition.To.ActionData == null)
+            {
+                return;
+            }
+
             GameObject character =
                 GetPreviewCharacter();
 
             if (character == null)
             {
-                ShowNoCharacterWarning();
+                if (showWarning)
+                {
+                    ShowNoCharacterWarning();
+                }
 
                 return;
             }
@@ -931,6 +853,25 @@ namespace Orike.ActionGraph
             _lastEditorTime =
                 currentTime;
 
+            SyncAutoPreviewFromSelection();
+
+            // 延迟自动保存：停止输入 2 秒后统一写盘
+            if (Graph != null)
+            {
+                _autoSaveTimer +=
+                    deltaTime;
+
+                if (_autoSaveTimer >=
+                    AutoSaveInterval)
+                {
+                    _autoSaveTimer =
+                        0f;
+
+                    AssetDatabase.SaveAssetIfDirty(
+                        Graph);
+                }
+            }
+
             if (_preview != null &&
                 _preview.IsRunning)
             {
@@ -938,6 +879,46 @@ namespace Orike.ActionGraph
                     deltaTime);
 
                 Repaint();
+            }
+        }
+
+
+        /// <summary>
+        /// 根据画布选中状态同步“连线自动预览”：
+        /// 选中 Edge -> 启动（静默）；选中节点 / 空白 -> 停止。
+        /// 每帧调用，但内部有状态守卫，仅在选中目标变化时真正启停。
+        /// </summary>
+        private void SyncAutoPreviewFromSelection()
+        {
+            if (_graphView == null)
+            {
+                return;
+            }
+
+            // 多选时与 Inspector 一致：节点优先，不做过渡预览
+            if (_graphView.GetSelectedNode() != null)
+            {
+                StopAutoTransitionPreview();
+
+                return;
+            }
+
+            UnityEditor.Experimental.GraphView.Edge edge =
+                _graphView.GetSelectedEdge();
+
+            TransitionData transition =
+                edge != null
+                    ? edge.userData as TransitionData
+                    : null;
+
+            if (transition != null)
+            {
+                PreviewTransitionFromSelection(
+                    transition);
+            }
+            else
+            {
+                StopAutoTransitionPreview();
             }
         }
     }

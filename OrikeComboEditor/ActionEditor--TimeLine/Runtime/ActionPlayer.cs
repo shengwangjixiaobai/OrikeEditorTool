@@ -11,6 +11,8 @@ using UnityEngine.Playables;
 /// 播放时会按时间推进 ActionData 中的各类轨道。
 ///
 ///   - 使用 PlayableGraph 和 AnimationMixer，支持 CrossFade。
+///   - CrossFade：归一化过渡，时长相对当前动作、起点相对目标动作。
+///   - CrossFadeInFixedTime：同等参数但按秒指定。
 ///   - Clip 开始时通过 AudioSource.PlayOneShot 播放音效。
 ///   - 根据当前时间创建并更新特效实例。
 ///   - 按 Clip 时间切换 Hitbox.activate，Collider 本身保持启用。
@@ -182,6 +184,23 @@ public class ActionPlayer : MonoBehaviour
 
 
     // =========================================================
+    // 实例缓冲池
+    //
+    // 按预制体缓存已经实例化过的特效 / Hitbox。
+    // 播放结束后实例回池（SetActive(false)），下次播放直接取出
+    // 复用，不再 Instantiate / Destroy。
+    // 池中对象在 ActionPlayer 销毁时统一真正销毁。
+    // =========================================================
+
+    private readonly Dictionary<
+        GameObject,
+        Stack<GameObject>> _instancePool =
+        new Dictionary<
+            GameObject,
+            Stack<GameObject>>();
+
+
+    // =========================================================
     // 角色
     // =========================================================
 
@@ -209,6 +228,8 @@ public class ActionPlayer : MonoBehaviour
     private void OnDestroy()
     {
         ShutdownGraph();
+
+        ClearPool();
     }
 
 
@@ -300,9 +321,11 @@ public class ActionPlayer : MonoBehaviour
                 action,
                 loop);
 
-        ApplyStartTime(
+        ApplyStartOffset(
             _active,
-            startPercent);
+            Mathf.Clamp01(
+                startPercent) *
+            _active.Duration);
 
         CurrentAction =
             action;
@@ -361,14 +384,25 @@ public class ActionPlayer : MonoBehaviour
 
 
     /// <summary>
-    /// 淡入播放另一个动作。
-    /// fadeDuration 小于等于 0 时使用 DefaultCrossFadeDuration。
+    /// 归一化淡入播放另一个动作（对齐 Animator.CrossFade）。
+    ///
+    /// normalizedTransitionDuration：
+    ///   过渡时长，相对“当前 / 来源动作”的总时长。
+    ///   小于等于 0 时使用 DefaultCrossFadeDuration（秒）。
+    ///
+    /// normalizedTimeOffset：
+    ///   目标动画起始点，相对“目标动作”的总时长。
+    ///
+    /// normalizedTransitionTime：
+    ///   过渡自身的起始进度（0 ~ 1）。
+    ///   0.3 表示直接以 30% 的混合状态开始过渡。
     /// </summary>
     public void CrossFade(
         ActionData action,
-        float fadeDuration = -1f,
+        float normalizedTransitionDuration = -1f,
         bool loop = false,
-        float startPercent = 0f)
+        float normalizedTimeOffset = 0f,
+        float normalizedTransitionTime = 0f)
     {
         if (action == null)
         {
@@ -378,10 +412,75 @@ public class ActionPlayer : MonoBehaviour
             return;
         }
 
-        if (fadeDuration <= 0f)
+        EnsureGraph();
+
+        ResumeGraph();
+
+
+        // 没有正在播放的动作时直接播放（起点仍按目标动作归一化）。
+        if (!IsPlaying ||
+            _active == null ||
+            _active.Finished)
         {
-            fadeDuration =
-                DefaultCrossFadeDuration;
+            Play(
+                action,
+                loop,
+                normalizedTimeOffset);
+
+            return;
+        }
+
+
+        // 相同动作无需重复淡入。
+        if (action == CurrentAction)
+        {
+            return;
+        }
+
+        float fadeDuration =
+            normalizedTransitionDuration > 0f
+                ? Mathf.Clamp01(
+                    normalizedTransitionDuration) *
+                  Mathf.Max(
+                      0.0001f,
+                      _active.Duration)
+                : DefaultCrossFadeDuration;
+
+        float offsetSeconds =
+            Mathf.Clamp01(
+                normalizedTimeOffset) *
+            CalculateDuration(
+                action);
+
+        StartCrossFade(
+            action,
+            loop,
+            fadeDuration,
+            offsetSeconds,
+            normalizedTransitionTime);
+    }
+
+
+    /// <summary>
+    /// 按秒淡入播放另一个动作（对齐 Animator.CrossFadeInFixedTime）。
+    ///
+    /// transitionDuration：过渡时长（秒）；
+    /// timeOffset：目标动画起始点（秒）；
+    /// normalizedTransitionTime：过渡自身的起始进度（0 ~ 1，归一化）。
+    /// </summary>
+    public void CrossFadeInFixedTime(
+        ActionData action,
+        float transitionDuration = -1f,
+        bool loop = false,
+        float timeOffset = 0f,
+        float normalizedTransitionTime = 0f)
+    {
+        if (action == null)
+        {
+            Debug.LogWarning(
+                "[ActionPlayer] 淡入失败：ActionData 为空。");
+
+            return;
         }
 
         EnsureGraph();
@@ -389,11 +488,24 @@ public class ActionPlayer : MonoBehaviour
         ResumeGraph();
 
 
-        // 没有正在播放的动作时直接播放。
+        // 没有正在播放的动作时直接播放，秒起点换算成归一化起点。
         if (!IsPlaying ||
             _active == null ||
             _active.Finished)
         {
+            float newDuration =
+                CalculateDuration(
+                    action);
+
+            float startPercent =
+                newDuration > 0f
+                    ? Mathf.Clamp(
+                        timeOffset,
+                        0f,
+                        newDuration) /
+                      newDuration
+                    : 0f;
+
             Play(
                 action,
                 loop,
@@ -409,7 +521,34 @@ public class ActionPlayer : MonoBehaviour
             return;
         }
 
+        float fadeDuration =
+            transitionDuration > 0f
+                ? transitionDuration
+                : DefaultCrossFadeDuration;
 
+        StartCrossFade(
+            action,
+            loop,
+            fadeDuration,
+            Mathf.Max(
+                0f,
+                timeOffset),
+            normalizedTransitionTime);
+    }
+
+
+    /// <summary>
+    /// CrossFade / CrossFadeInFixedTime 的共用实现。
+    /// 所有时间参数在调用前已换算为秒，
+    /// normalizedTransitionTime 仍为 0 ~ 1 的过渡进度。
+    /// </summary>
+    private void StartCrossFade(
+        ActionData action,
+        bool loop,
+        float fadeDuration,
+        float startOffsetSeconds,
+        float normalizedTransitionTime)
+    {
         // 如果已经处于 CrossFade 中，先清理旧的淡出动作，
         // 再将当前动画移动到槽位 0。
         if (_fadingOut != null)
@@ -436,15 +575,15 @@ public class ActionPlayer : MonoBehaviour
             _fadingOut);
 
 
-        // 从时间 0 开始播放新动作。
+        // 从指定起点开始播放新动作。
         _active =
             CreatePlayback(
                 action,
                 loop);
 
-        ApplyStartTime(
+        ApplyStartOffset(
             _active,
-            startPercent);
+            startOffsetSeconds);
 
         CurrentAction =
             action;
@@ -464,17 +603,26 @@ public class ActionPlayer : MonoBehaviour
                 _active,
                 _active.Time));
 
-        SetSlotWeights(
-            1f,
-            0f);
-
-        _fadeTimer =
-            0f;
-
         _fadeDuration =
             Mathf.Max(
                 0.0001f,
                 fadeDuration);
+
+
+        // 过渡从指定进度开始：混合权重直接跳到该位置。
+        _fadeTimer =
+            Mathf.Clamp01(
+                normalizedTransitionTime) *
+            _fadeDuration;
+
+        float initialK =
+            Mathf.Clamp01(
+                _fadeTimer /
+                _fadeDuration);
+
+        SetSlotWeights(
+            1f - initialK,
+            initialK);
 
 
         // 在起始时间处理新动作的事件和片段。
@@ -488,7 +636,7 @@ public class ActionPlayer : MonoBehaviour
 
 
     /// <summary>
-    /// 按名称查找并淡入播放动作。
+    /// 按名称查找并淡入播放动作（按秒）。
     /// </summary>
     public void CrossFade(
         string actionName,
@@ -507,7 +655,7 @@ public class ActionPlayer : MonoBehaviour
             return;
         }
 
-        CrossFade(
+        CrossFadeInFixedTime(
             action,
             fadeDuration,
             loop);
@@ -953,7 +1101,7 @@ public class ActionPlayer : MonoBehaviour
                     _graph,
                     clip);
 
-            // Transition StartPercent：
+            // 过渡的目标起始点：
             // 片段首次放入槽位时定位到指定的本地时间
             if (initialLocalTime > 0f)
             {
@@ -1409,14 +1557,14 @@ public class ActionPlayer : MonoBehaviour
 
 
     /// <summary>
-    /// 按 StartPercent（0~1）设置播放起始时间。
+    /// 按秒设置播放起始时间，会被截断在动作时长范围内。
     ///
     /// 同时把 LastEventTime 定位到起始时刻，
     /// 保证起始位置之前的音效 / 特效 / 点事件不会被补触发。
     /// </summary>
-    private static void ApplyStartTime(
+    private static void ApplyStartOffset(
         ActionPlayback playback,
-        float startPercent)
+        float offsetSeconds)
     {
         if (playback == null ||
             playback.Duration <= 0f)
@@ -1424,18 +1572,11 @@ public class ActionPlayer : MonoBehaviour
             return;
         }
 
-        float percent =
-            Mathf.Clamp01(
-                startPercent);
-
-        if (percent <= 0f)
-        {
-            return;
-        }
-
         float startTime =
-            percent *
-            playback.Duration;
+            Mathf.Clamp(
+                offsetSeconds,
+                0f,
+                playback.Duration);
 
         playback.Time =
             startTime;
@@ -1447,7 +1588,7 @@ public class ActionPlayer : MonoBehaviour
 
     /// <summary>
     /// 获取指定时刻所在动画 Clip 内对应的本地播放时间。
-    /// 用于 Transition StartPercent 定位动画片段。
+    /// 用于过渡目标起始点定位动画片段。
     /// </summary>
     private static float GetAnimationClipLocalTime(
         ActionPlayback playback,
@@ -1525,7 +1666,7 @@ public class ActionPlayer : MonoBehaviour
         }
 
         GameObject instance =
-            Instantiate(
+            AcquireInstance(
                 clip.EffectPrefab);
 
         AttachToBone(
@@ -1533,9 +1674,26 @@ public class ActionPlayer : MonoBehaviour
             clip.AttachBone,
             clip.LocalOffset);
 
+        // 复用池中实例时对象刚被重新激活，
+        // 主动重播一次所有粒子，不依赖预制体的 Play On Awake。
+        ParticleSystem[] particles =
+            instance.GetComponentsInChildren<
+                ParticleSystem>(true);
+
+        for (
+            int i = 0;
+            i < particles.Length;
+            i++)
+        {
+            particles[i].Play();
+        }
+
         playback.Effects.Add(
             new EffectRuntime
             {
+                Prefab =
+                    clip.EffectPrefab,
+
                 GameObject =
                     instance,
 
@@ -1569,7 +1727,8 @@ public class ActionPlayer : MonoBehaviour
             if (Time.time >=
                 fx.DestroyAtGameTime)
             {
-                Destroy(
+                ReleaseInstance(
+                    fx.Prefab,
                     fx.GameObject);
 
                 playback.Effects.RemoveAt(
@@ -1579,18 +1738,16 @@ public class ActionPlayer : MonoBehaviour
     }
 
 
-    private static void DestroyEffects(
+    private void DestroyEffects(
         ActionPlayback playback)
     {
         foreach (
             EffectRuntime fx
             in playback.Effects)
         {
-            if (fx.GameObject != null)
-            {
-                UnityEngine.Object.Destroy(
-                    fx.GameObject);
-            }
+            ReleaseInstance(
+                fx.Prefab,
+                fx.GameObject);
         }
 
         playback.Effects.Clear();
@@ -1645,7 +1802,7 @@ public class ActionPlayer : MonoBehaviour
         if (instance == null)
         {
             instance =
-                Instantiate(
+                AcquireInstance(
                     clip.HitboxPrefab);
 
             playback.HitboxInstances[
@@ -1680,21 +1837,134 @@ public class ActionPlayer : MonoBehaviour
     }
 
 
-    private static void DestroyHitboxes(
+    private void DestroyHitboxes(
         ActionPlayback playback)
     {
         foreach (
             var pair
             in playback.HitboxInstances)
         {
-            if (pair.Value != null)
-            {
-                UnityEngine.Object.Destroy(
-                    pair.Value);
-            }
+            ReleaseInstance(
+                pair.Key,
+                pair.Value);
         }
 
         playback.HitboxInstances.Clear();
+    }
+
+
+    // =========================================================
+    // 实例缓冲池
+    // =========================================================
+
+    /// <summary>
+    /// 从池中取出预制体实例；池为空时才 Instantiate。
+    /// </summary>
+    private GameObject AcquireInstance(
+        GameObject prefab)
+    {
+        if (prefab == null)
+        {
+            return null;
+        }
+
+        if (_instancePool.TryGetValue(
+                prefab,
+                out Stack<GameObject> stack))
+        {
+            while (stack.Count > 0)
+            {
+                GameObject pooled =
+                    stack.Pop();
+
+                // 防御：池中的实例可能被外部逻辑销毁。
+                if (pooled != null)
+                {
+                    pooled.SetActive(
+                        true);
+
+                    return pooled;
+                }
+            }
+        }
+
+        return Instantiate(
+            prefab);
+    }
+
+
+    /// <summary>
+    /// 将实例归还到池中：脱离骨骼挂点并隐藏，等待下次复用。
+    /// </summary>
+    private void ReleaseInstance(
+        GameObject prefab,
+        GameObject instance)
+    {
+        if (instance == null)
+        {
+            return;
+        }
+
+        if (prefab == null)
+        {
+            // 无法按预制体入池时直接销毁。
+            Destroy(
+                instance);
+
+            return;
+        }
+
+        instance.transform.SetParent(
+            MasterObject.transform,
+            false);
+
+        instance.SetActive(
+            false);
+
+        if (!_instancePool.TryGetValue(
+                prefab,
+                out Stack<GameObject> stack))
+        {
+            stack =
+                new Stack<GameObject>();
+
+            _instancePool[prefab] =
+                stack;
+        }
+
+        stack.Push(
+            instance);
+    }
+
+
+    /// <summary>
+    /// 真正销毁池中缓存的全部实例。
+    /// 仅在 ActionPlayer 销毁时调用。
+    /// </summary>
+    private void ClearPool()
+    {
+        foreach (
+            var pair
+            in _instancePool)
+        {
+            if (pair.Value == null)
+            {
+                continue;
+            }
+
+            foreach (
+                GameObject instance
+                in pair.Value)
+            {
+                if (instance != null)
+                {
+                    Destroy(
+                        instance);
+                }
+            }
+        }
+
+        _instancePool.Clear();
     }
 
 
@@ -1936,6 +2206,8 @@ public class ActionPlayer : MonoBehaviour
 
     private class EffectRuntime
     {
+        public GameObject Prefab;
+
         public GameObject GameObject;
 
         public float DestroyAtGameTime;

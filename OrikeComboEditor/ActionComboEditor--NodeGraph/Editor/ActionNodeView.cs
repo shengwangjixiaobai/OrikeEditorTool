@@ -17,7 +17,8 @@ namespace Orike.ActionGraph
     ///     OutputPort <- 每个 BeCancelData（被取消方）
     ///   - 每个端口旁有可编辑的 Tag 文本框与删除按钮
     ///   - 输入/输出区底部有 "+" 按钮用于新增 Cancel / BeCancel
-    ///   - 通过内嵌 IMGUI 编辑器编辑 Action 其余字段
+    ///   - 内嵌 IMGUI 编辑器编辑基础字段，
+    ///     KeyCommands 只读展示，配置在右侧 Inspector 中进行
     ///
     /// 端口方向（Edge）：
     ///   From（被取消）输出端口  ->  To（取消）输入端口
@@ -35,9 +36,17 @@ namespace Orike.ActionGraph
 
         /// <summary>
         /// 内嵌 IMGUI 编辑器，高度按内容自适应，
-        /// 避免 KeyCommand 等列表变多时内容被裁剪。
+        /// KeyCommands 只读展示后节点高度随之收紧。
         /// </summary>
         private IMGUIContainer _editor;
+
+
+        /// <summary>
+        /// 内嵌编辑器的最小高度。
+        /// 基础字段 + 一行按键要求大约占 140px。
+        /// </summary>
+        private const float MinEditorHeight =
+            140f;
 
 
         /// <summary>
@@ -51,6 +60,28 @@ namespace Orike.ActionGraph
         /// </summary>
         private readonly Dictionary<BeCancelData, Port> _outputPorts =
             new Dictionary<BeCancelData, Port>();
+
+
+        /// <summary>
+        /// “自动转入”输入端口：其他动作结束后可以自动切换到本动作。
+        /// 任何动作（含 Loop）都保留该输入端口。
+        /// </summary>
+        public Port AutoInputPort
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// “结束自动转移”输出端口：本动作自然播完后切换到连线目标。
+        /// Loop 动作播放结束即重播自己，没有“结束后”，
+        /// 因此该端口在 Loop 时隐藏。
+        /// </summary>
+        public Port AutoOutputPort
+        {
+            get;
+            private set;
+        }
 
 
         /// <summary>输入区底部的"+"按钮。</summary>
@@ -110,7 +141,7 @@ namespace Orike.ActionGraph
                 220f;
 
             _editor.style.minHeight =
-                220f;
+                MinEditorHeight;
 
             mainContainer.Add(
                 _editor);
@@ -239,7 +270,7 @@ namespace Orike.ActionGraph
 
         /// <summary>
         /// 依据 IMGUI 实际布局高度调整内嵌编辑器高度，
-        /// 使节点随 KeyCommand 等列表的增减自适应，避免内容被裁剪。
+        /// 使节点随按键要求条数多少自适应，避免内容被裁剪。
         /// </summary>
         private void MeasureAndResizeEditor()
         {
@@ -268,7 +299,7 @@ namespace Orike.ActionGraph
             // 与 minHeight 一同构成编辑器高度，并预留少量底部余量。
             float target =
                 Mathf.Max(
-                    220f,
+                    MinEditorHeight,
                     contentHeight + 2f);
 
             float current =
@@ -331,10 +362,72 @@ namespace Orike.ActionGraph
 
         public void SyncPorts()
         {
+            EnsureAutoPorts();
+
             SyncOutputPorts();
             SyncInputPorts();
 
+            // 自动转移端口固定在输入 / 输出区最底部（"+"按钮之下）
+            EnsureAddButtonAtEnd(
+                inputContainer,
+                AutoInputPort);
+
+            EnsureAddButtonAtEnd(
+                outputContainer,
+                AutoOutputPort);
+
+            // Loop 动作没有“播放结束”，隐藏自动转移输出端口
+            AutoOutputPort.style.display =
+                Action != null && Action.Loop
+                    ? DisplayStyle.None
+                    : DisplayStyle.Flex;
+
             RefreshPorts();
+        }
+
+
+        /// <summary>
+        /// 判断端口是否为“结束自动转移 / 自动转入”专用端口。
+        /// 自动端口使用 typeof(Action) 作为 portType，
+        /// Tag 端口使用 typeof(bool)，GraphView 据此禁止两类端口混连。
+        /// </summary>
+        public static bool IsAutoPort(
+            Port port)
+        {
+            return
+                port != null &&
+                port.portType ==
+                typeof(Action);
+        }
+
+
+        private void EnsureAutoPorts()
+        {
+            if (AutoInputPort == null)
+            {
+                AutoInputPort =
+                    Port.Create<Edge>(
+                        Orientation.Horizontal,
+                        Direction.Input,
+                        Port.Capacity.Multi,
+                        typeof(Action));
+
+                AutoInputPort.portName =
+                    "自动转入";
+            }
+
+            if (AutoOutputPort == null)
+            {
+                AutoOutputPort =
+                    Port.Create<Edge>(
+                        Orientation.Horizontal,
+                        Direction.Output,
+                        Port.Capacity.Single,
+                        typeof(Action));
+
+                AutoOutputPort.portName =
+                    "结束自动转移";
+            }
         }
 
 
@@ -454,26 +547,26 @@ namespace Orike.ActionGraph
 
 
         /// <summary>
-        /// 将"+"按钮移到容器末尾，保证它始终显示在最底部。
+        /// 将元素移到容器末尾，保证它始终显示在最底部。
         /// </summary>
         private static void EnsureAddButtonAtEnd(
             VisualElement container,
-            Button button)
+            VisualElement element)
         {
             if (container == null ||
-                button == null)
+                element == null)
             {
                 return;
             }
 
-            if (button.parent == container)
+            if (element.parent == container)
             {
                 container.Remove(
-                    button);
+                    element);
             }
 
             container.Add(
-                button);
+                element);
         }
 
 
@@ -900,17 +993,35 @@ namespace Orike.ActionGraph
         {
             switch (key)
             {
-                case KeyMap.Y:
-                    return "Y";
+                case KeyMap.Y_press:
+                    return "Y_Down";
 
-                case KeyMap.B:
-                    return "B";
+                case KeyMap.B_press:
+                    return "B_Down";
 
-                case KeyMap.A:
-                    return "A";
+                case KeyMap.A_press:
+                    return "A_Down";
 
-                case KeyMap.X:
-                    return "X";
+                case KeyMap.X_press:
+                    return "X_Down";
+                
+                case KeyMap.Y_release:
+                    return "Y_Up";
+                
+                case KeyMap.B_release:
+                    return "B_Up";
+
+                case KeyMap.A_release:
+                    return "A_Up";
+
+                case KeyMap.X_release:
+                    return "X_Up";
+
+                case KeyMap.HasMovementInput:
+                    return "◈";
+
+                case KeyMap.NoMovementInput:
+                    return "◇";
 
                 case KeyMap.Left:
                     return "←";

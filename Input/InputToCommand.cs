@@ -32,31 +32,52 @@ public class InputToCommand : MonoBehaviour
         }
 
 
-        //记录按键输入
-        if (InputManagerTest.Instance.Y > 0.5f)
+        //==============记录按键输入===================
+
+        //四个按键按下
+        if (InputManager.Instance.Y.IsPressed())
         {
-            AddInput(KeyMap.Y);
+            AddInput(KeyMap.Y_press);
         }
 
-        if (InputManagerTest.Instance.B > 0.5f)
+        if (InputManager.Instance.B.IsPressed())
         {
-            AddInput(KeyMap.B);
+            AddInput(KeyMap.B_press);
         }
 
-        if (InputManagerTest.Instance.A > 0.5f)
+        if (InputManager.Instance.A.IsPressed())
         {
-            AddInput(KeyMap.A);
+            AddInput(KeyMap.A_press);
         }
 
-        if (InputManagerTest.Instance.X > 0.5f)
+        if (InputManager.Instance.X.IsPressed())
         {
-            AddInput(KeyMap.X);
+            AddInput(KeyMap.X_press);   
         }
+        //四个按键松开
+        if(InputManager.Instance.Y.WasReleasedThisFrame())
+        {
+            AddInput(KeyMap.Y_release);
+        }
+        if(InputManager.Instance.B.WasReleasedThisFrame())
+        {
+            AddInput(KeyMap.B_release);
+        }
+        if(InputManager.Instance.A.WasReleasedThisFrame())
+        {
+            AddInput(KeyMap.A_release);
+        }
+        if(InputManager.Instance.X.WasReleasedThisFrame())
+        {
+            AddInput(KeyMap.X_release);
+        }
+
         //处理方向输入
-        Vector2 move = InputManagerTest.Instance.Move;
+        Vector2 move = InputManager.Instance.Move_Value;
         if (move != Vector2.zero)
         {
-
+            AddInput(KeyMap.HasMovementInput);
+            
             if (move.x > 0)
             {
                 if (move.y > 0) AddInput(KeyMap.RightUp);
@@ -75,7 +96,13 @@ public class InputToCommand : MonoBehaviour
                 else AddInput(KeyMap.LeftDown);
             }
 
+        }else
+        {
+            AddInput(KeyMap.NoMovementInput);
         }
+
+
+
 
         timeStamp += Time.deltaTime;
     }
@@ -125,11 +152,14 @@ public class InputToCommand : MonoBehaviour
 [Serializable]
 public enum KeyMap
 {
-    Y = 1,
-    B = 2,
-    A = 3,
-    X = 4,
 
+    //四个按键按下
+    Y_press = 1,
+    B_press = 2,
+    A_press = 3,
+    X_press = 4,
+
+    //八个方向
     Left = 5,
     LeftUp = 6,
     Up = 7,
@@ -138,6 +168,20 @@ public enum KeyMap
     RightDown = 10,
     Down = 11,
     LeftDown = 12,
+
+    //方向键有输入
+    HasMovementInput = 13,
+    
+    //方向键输入
+    NoMovementInput = 14,
+
+    //松开四个按键
+    Y_release = 23,
+    B_release = 24,
+    A_release = 25,
+    X_release = 26,
+
+
 }
 
 [Serializable]
