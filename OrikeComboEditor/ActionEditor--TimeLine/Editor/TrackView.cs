@@ -1581,17 +1581,21 @@ public class TrackView
         else if (_trackData.ClipType ==
                  ClipType.StateEvent)
         {
-            EventType[] stateEventTypes =
-                EventFactory.GetStateEventTypes();
+            string[] stateEventTypes =
+                EventFactory.GetStateEventTypeNames();
 
             foreach (
-                EventType seType
+                string seType
                 in stateEventTypes)
             {
+                string displayName =
+                    EventRegistry.GetDisplayName(
+                        seType);
+
                 menu.AddItem(
                     new GUIContent(
                         "Add/State Event Clip/" +
-                        seType),
+                        displayName),
                     false,
                     () =>
                     {
@@ -1608,17 +1612,21 @@ public class TrackView
         // Add Point Event（所有轨道都可以加点事件）
         // -----------------------------------------------------
 
-        EventType[] pointEventTypes =
-            EventFactory.GetPointEventTypes();
+        string[] pointEventTypes =
+            EventFactory.GetPointEventTypeNames();
 
         foreach (
-            EventType peType
+            string peType
             in pointEventTypes)
         {
+            string displayName =
+                EventRegistry.GetDisplayName(
+                    peType);
+
             menu.AddItem(
                 new GUIContent(
                     "Add Point Event/" +
-                    peType),
+                    displayName),
                 false,
                 () =>
                 {

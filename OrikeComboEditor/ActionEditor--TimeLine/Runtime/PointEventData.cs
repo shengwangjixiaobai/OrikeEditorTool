@@ -23,7 +23,11 @@ public class PointEventData
     /// </summary>
     public float Time;
 
-    public EventType EventType;
+    /// <summary>
+    /// 事件类型名（类全名）
+    /// 自动扫描方案：改为 string，由 EventRegistry 解析
+    /// </summary>
+    public string EventType;
 
     /// <summary>
     /// 具体的点事件实例
@@ -41,5 +45,29 @@ public class PointEventData
         PointEvent =
             EventFactory.CreatePointEvent(
                 EventType);
+    }
+
+    /// <summary>
+    /// 兼容旧资产：将旧枚举值转为类全名
+    /// </summary>
+    public void MigrateEventType()
+    {
+        if (string.IsNullOrEmpty(EventType) ||
+            EventRegistry.IsPointEventType(EventType))
+        {
+            return;
+        }
+
+        IPointEvent resolved =
+            EventRegistry.CreatePointEvent(
+                EventType);
+
+        if (resolved != null)
+        {
+            return;
+        }
+
+        EventType =
+            null;
     }
 }

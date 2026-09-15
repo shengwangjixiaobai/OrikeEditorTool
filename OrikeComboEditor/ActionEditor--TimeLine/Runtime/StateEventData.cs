@@ -17,7 +17,11 @@ using UnityEngine;
 public class StateEventData
     : BaseClipData
 {
-    public EventType EventType;
+    /// <summary>
+    /// 事件类型名（类全名）
+    /// 自动扫描方案：改为 string，由 EventRegistry 解析
+    /// </summary>
+    public string EventType;
 
     /// <summary>
     /// 具体的持续事件实例
@@ -70,5 +74,32 @@ public class StateEventData
         StateEvent =
             EventFactory.CreateStateEvent(
                 EventType);
+    }
+
+    /// <summary>
+    /// 兼容旧资产：将旧枚举值转为类全名
+    /// </summary>
+    public void MigrateEventType()
+    {
+        if (string.IsNullOrEmpty(EventType) ||
+            EventRegistry.IsStateEventType(EventType))
+        {
+            return;
+        }
+
+        // 尝试按旧枚举名匹配
+        IStateEvent resolved =
+            EventRegistry.CreateStateEvent(
+                EventType);
+
+        if (resolved != null)
+        {
+            // EventType 已是可解析的短名
+            return;
+        }
+
+        // 无法解析，置空
+        EventType =
+            null;
     }
 }

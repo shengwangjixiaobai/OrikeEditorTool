@@ -1083,8 +1083,8 @@ public class InspectorView : VisualElement
         }
 
 
-        EventType[] eventTypes =
-            EventFactory.GetStateEventTypes();
+        string[] eventTypes =
+            EventFactory.GetStateEventTypeNames();
 
         EnsureStateEventInstance(
             clip,
@@ -1095,18 +1095,21 @@ public class InspectorView : VisualElement
         // Event Type 下拉
         // =====================================================
 
-        PopupField<EventType> typePopup =
-            new PopupField<EventType>(
+        int stateSelectedIndex =
+            Mathf.Max(
+                0,
+                Array.IndexOf(
+                    eventTypes,
+                    clip.EventType));
+
+        PopupField<string> typePopup =
+            new PopupField<string>(
                 "Event Type",
-                new List<EventType>(
+                new List<string>(
                     eventTypes),
-                clip.EventType);
-
-        typePopup.formatListItemCallback =
-            FormatEventType;
-
-        typePopup.formatSelectedValueCallback =
-            FormatEventType;
+                stateSelectedIndex,
+                EventRegistry.GetDisplayName,
+                EventRegistry.GetDisplayName);
 
         typePopup.RegisterValueChangedCallback(
             evt =>
@@ -1236,8 +1239,8 @@ public class InspectorView : VisualElement
             timeField);
 
 
-        EventType[] eventTypes =
-            EventFactory.GetPointEventTypes();
+        string[] eventTypes =
+            EventFactory.GetPointEventTypeNames();
 
         EnsurePointEventInstance(
             pointEvent,
@@ -1248,18 +1251,21 @@ public class InspectorView : VisualElement
         // Event Type 下拉
         // =====================================================
 
-        PopupField<EventType> typePopup =
-            new PopupField<EventType>(
+        int pointSelectedIndex =
+            Mathf.Max(
+                0,
+                Array.IndexOf(
+                    eventTypes,
+                    pointEvent.EventType));
+
+        PopupField<string> typePopup =
+            new PopupField<string>(
                 "Event Type",
-                new List<EventType>(
+                new List<string>(
                     eventTypes),
-                pointEvent.EventType);
-
-        typePopup.formatListItemCallback =
-            FormatEventType;
-
-        typePopup.formatSelectedValueCallback =
-            FormatEventType;
+                pointSelectedIndex,
+                EventRegistry.GetDisplayName,
+                EventRegistry.GetDisplayName);
 
         typePopup.RegisterValueChangedCallback(
             evt =>
@@ -1754,7 +1760,7 @@ public class InspectorView : VisualElement
 
     private static void EnsureStateEventInstance(
         StateEventData clip,
-        EventType[] eventTypes)
+        string[] eventTypes)
     {
         if (clip.StateEvent != null ||
             eventTypes.Length == 0)
@@ -1776,7 +1782,7 @@ public class InspectorView : VisualElement
 
     private static void EnsurePointEventInstance(
         PointEventData pointEvent,
-        EventType[] eventTypes)
+        string[] eventTypes)
     {
         if (pointEvent.PointEvent != null ||
             eventTypes.Length == 0)
@@ -1796,12 +1802,8 @@ public class InspectorView : VisualElement
     }
 
 
-    private static string FormatEventType(
-        EventType eventType)
-    {
-        return ObjectNames.NicifyVariableName(
-            eventType.ToString());
-    }
+    // FormatEventType 已移除
+    // 改用 EventRegistry.GetDisplayName 显示事件类型名
 
 
     // =========================================================

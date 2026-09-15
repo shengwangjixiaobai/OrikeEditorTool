@@ -1224,7 +1224,7 @@ public class TimeLineController
 
     public StateEventData AddStateEventClip(
         TrackData trackData,
-        EventType eventType,
+        string eventType,
         float startTime)
     {
         if (trackData == null)
@@ -1562,7 +1562,7 @@ public class TimeLineController
 
     public void SetStateEventType(
         StateEventData clipData,
-        EventType eventType)
+        string eventType)
     {
         if (clipData == null)
         {
@@ -1601,7 +1601,7 @@ public class TimeLineController
 
     public PointEventData AddPointEvent(
         TrackData trackData,
-        EventType eventType,
+        string eventType,
         float time)
     {
         if (trackData == null)
@@ -1697,7 +1697,7 @@ public class TimeLineController
 
     public void SetPointEventType(
         PointEventData pointEvent,
-        EventType eventType)
+        string eventType)
     {
         if (pointEvent == null)
         {

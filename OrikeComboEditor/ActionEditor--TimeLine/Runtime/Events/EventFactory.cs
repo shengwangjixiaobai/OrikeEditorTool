@@ -1,97 +1,34 @@
 using System;
-using System.Collections.Generic;
 
 /// <summary>
-/// 事件工厂
+/// 事件工厂（兼容门面）
 ///
-/// 根据 EventType 枚举创建对应的事件实例
-/// 同时提供：
-///   - 是否持续事件 / 点事件的判断
-///   - 获取所有可用类型的列表（供 Inspector 下拉）
-///
-/// 新增事件类型时，只需在此加映射
+/// 内部委托 EventRegistry 自动扫描实现。
+/// 新代码请直接使用 EventRegistry。
 /// </summary>
 public static class EventFactory
 {
     // =========================================================
-    // 持续事件映射
-    // =========================================================
-
-    private static readonly Dictionary<
-        EventType,
-        Func<IStateEvent>> _stateEventCreators =
-        new Dictionary<
-            EventType,
-            Func<IStateEvent>>()
-        {
-            {
-                EventType.DebugTestState,
-                () => new DebugTestStateEvent()
-            },
-        };
-
-
-    // =========================================================
-    // 点事件映射
-    // =========================================================
-
-    private static readonly Dictionary<
-        EventType,
-        Func<IPointEvent>> _pointEventCreators =
-        new Dictionary<
-            EventType,
-            Func<IPointEvent>>()
-        {
-            {
-                EventType.DebugTestPoint,
-                () => new DebugTestPointEvent()
-            },
-        };
-
-
-    // =========================================================
-    // 创建持续事件
+    // 创建持续事件（按类型名）
     // =========================================================
 
     public static IStateEvent CreateStateEvent(
-        EventType eventType)
+        string typeName)
     {
-        if (eventType == EventType.None)
-        {
-            return null;
-        }
-
-        if (_stateEventCreators.TryGetValue(
-                eventType,
-                out var creator))
-        {
-            return creator();
-        }
-
-        return null;
+        return EventRegistry.CreateStateEvent(
+            typeName);
     }
 
 
     // =========================================================
-    // 创建点事件
+    // 创建点事件（按类型名）
     // =========================================================
 
     public static IPointEvent CreatePointEvent(
-        EventType eventType)
+        string typeName)
     {
-        if (eventType == EventType.None)
-        {
-            return null;
-        }
-
-        if (_pointEventCreators.TryGetValue(
-                eventType,
-                out var creator))
-        {
-            return creator();
-        }
-
-        return null;
+        return EventRegistry.CreatePointEvent(
+            typeName);
     }
 
 
@@ -100,10 +37,10 @@ public static class EventFactory
     // =========================================================
 
     public static bool IsStateEventType(
-        EventType eventType)
+        string typeName)
     {
-        return _stateEventCreators
-            .ContainsKey(eventType);
+        return EventRegistry.IsStateEventType(
+            typeName);
     }
 
 
@@ -112,53 +49,31 @@ public static class EventFactory
     // =========================================================
 
     public static bool IsPointEventType(
-        EventType eventType)
+        string typeName)
     {
-        return _pointEventCreators
-            .ContainsKey(eventType);
+        return EventRegistry.IsPointEventType(
+            typeName);
     }
 
 
     // =========================================================
-    // 获取所有持续事件类型
+    // 获取所有持续事件类型名
     // =========================================================
 
-    public static EventType[] GetStateEventTypes()
+    public static string[] GetStateEventTypeNames()
     {
-        EventType[] result =
-            new EventType[_stateEventCreators.Count];
-
-        int i = 0;
-
-        foreach (
-            EventType type
-            in _stateEventCreators.Keys)
-        {
-            result[i++] = type;
-        }
-
-        return result;
+        return EventRegistry
+            .GetStateEventTypeNames();
     }
 
 
     // =========================================================
-    // 获取所有点事件类型
+    // 获取所有点事件类型名
     // =========================================================
 
-    public static EventType[] GetPointEventTypes()
+    public static string[] GetPointEventTypeNames()
     {
-        EventType[] result =
-            new EventType[_pointEventCreators.Count];
-
-        int i = 0;
-
-        foreach (
-            EventType type
-            in _pointEventCreators.Keys)
-        {
-            result[i++] = type;
-        }
-
-        return result;
+        return EventRegistry
+            .GetPointEventTypeNames();
     }
 }

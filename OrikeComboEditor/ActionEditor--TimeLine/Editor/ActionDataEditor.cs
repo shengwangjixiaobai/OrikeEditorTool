@@ -755,40 +755,33 @@ public class ActionDataEditor : Editor
 
 
         // Event Type
-        EventType[] stateTypes =
-            EventFactory.GetStateEventTypes();
+        string[] stateTypes =
+            EventFactory.GetStateEventTypeNames();
 
         int selectedIndex =
-            0;
+            Mathf.Max(
+                0,
+                Array.IndexOf(
+                    stateTypes,
+                    clip.EventType));
 
-        for (int i = 0;
-             i < stateTypes.Length;
-             i++)
-        {
-            if (stateTypes[i] ==
-                clip.EventType)
-            {
-                selectedIndex = i;
-                break;
-            }
-        }
-
-        string[] typeNames =
+        string[] displayNames =
             new string[stateTypes.Length];
 
         for (int i = 0;
              i < stateTypes.Length;
              i++)
         {
-            typeNames[i] =
-                stateTypes[i].ToString();
+            displayNames[i] =
+                EventRegistry.GetDisplayName(
+                    stateTypes[i]);
         }
 
         int newIndex =
             EditorGUILayout.Popup(
                 "Event Type",
                 selectedIndex,
-                typeNames);
+                displayNames);
 
         if (newIndex != selectedIndex)
         {
