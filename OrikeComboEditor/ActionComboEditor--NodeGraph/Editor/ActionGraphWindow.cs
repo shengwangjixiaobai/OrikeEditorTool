@@ -53,6 +53,13 @@ namespace Orike.ActionGraph
         /// </summary>
         private float _autoSaveTimer;
 
+        /// <summary>
+        /// 用户手动停止预览时选中的连线，
+        /// 用于阻止 SyncAutoPreviewFromSelection 在同一选中状态下自动重启。
+        /// 选中目标变化时自动清除。
+        /// </summary>
+        private TransitionData _manualStopKey;
+
         private const float AutoSaveInterval =
             2f;
 
@@ -723,10 +730,18 @@ namespace Orike.ActionGraph
         {
             if (IsPreviewingTransition(transition))
             {
+                // 记录手动停止的连线，阻止自动预览在下一帧重启
+                _manualStopKey =
+                    transition;
+
                 StopPreview();
 
                 return;
             }
+
+            // 手动重新播放时清除停止标记
+            _manualStopKey =
+                null;
 
             StartTransitionPreview(
                 transition,
@@ -898,6 +913,9 @@ namespace Orike.ActionGraph
             // 多选时与 Inspector 一致：节点优先，不做过渡预览
             if (_graphView.GetSelectedNode() != null)
             {
+                _manualStopKey =
+                    null;
+
                 StopAutoTransitionPreview();
 
                 return;
@@ -913,11 +931,22 @@ namespace Orike.ActionGraph
 
             if (transition != null)
             {
+                // 用户手动停止了同一条连线的预览时不自动重启，
+                // 选中目标变化后 _manualStopKey 被清除即恢复自动预览
+                if (_manualStopKey == transition)
+                {
+                    return;
+                }
+
                 PreviewTransitionFromSelection(
                     transition);
             }
             else
             {
+                // 选中目标不再是连线，清除手动停止标记
+                _manualStopKey =
+                    null;
+
                 StopAutoTransitionPreview();
             }
         }
