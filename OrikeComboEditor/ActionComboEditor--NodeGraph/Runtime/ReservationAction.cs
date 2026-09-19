@@ -42,6 +42,12 @@ namespace Orike.ActionGraph
         /// </summary>
         public float Duration;
 
+        /// <summary>
+        /// 触发该预约的 KeyCommand 绑定的取消 Tag；
+        /// null/空 = 作用于所有 Cancel。
+        /// </summary>
+        public string CancelTag;
+
 
         /// <summary>
         /// 最终优先级 = ActionPriority + TransitionPriority。
@@ -72,7 +78,8 @@ namespace Orike.ActionGraph
             Action target,
             TransitionData transition,
             float currentTime,
-            float duration)
+            float duration,
+            string cancelTag = null)
         {
             ReservationAction reservation =
                 new ReservationAction
@@ -96,6 +103,9 @@ namespace Orike.ActionGraph
 
                     Duration =
                         duration,
+
+                    CancelTag =
+                        cancelTag,
                 };
 
             return reservation;

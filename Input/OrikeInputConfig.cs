@@ -80,6 +80,42 @@ public partial class @OrikeInputConfig: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""RB"",
+                    ""type"": ""Button"",
+                    ""id"": ""d396cbe2-09ac-4c94-a387-2175b7e12525"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""LB"",
+                    ""type"": ""Button"",
+                    ""id"": ""d2ee74ba-fbd5-4634-be7f-c5e173343254"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""RT"",
+                    ""type"": ""Button"",
+                    ""id"": ""c4264e17-dfda-4fef-87dd-a2944a22f981"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""LT"",
+                    ""type"": ""Button"",
+                    ""id"": ""36043d37-93e1-4f67-87c4-eed67c145f06"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -214,6 +250,50 @@ public partial class @OrikeInputConfig: IInputActionCollection2, IDisposable
                     ""action"": ""X"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b7c42204-9c4c-406a-8936-455b8ec010c2"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""RB"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""bfa3ebcb-9c61-4930-9cf5-e2849a8386ec"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""LB"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b3b97fb3-94ba-4b89-ac08-4611a6b4d441"",
+                    ""path"": ""<Gamepad>/rightTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""RT"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""382ea6b1-b171-4bc7-ae28-8e6232b250f9"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""LT"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -228,6 +308,10 @@ public partial class @OrikeInputConfig: IInputActionCollection2, IDisposable
         m_Player_B = m_Player.FindAction("B", throwIfNotFound: true);
         m_Player_A = m_Player.FindAction("A", throwIfNotFound: true);
         m_Player_X = m_Player.FindAction("X", throwIfNotFound: true);
+        m_Player_RB = m_Player.FindAction("RB", throwIfNotFound: true);
+        m_Player_LB = m_Player.FindAction("LB", throwIfNotFound: true);
+        m_Player_RT = m_Player.FindAction("RT", throwIfNotFound: true);
+        m_Player_LT = m_Player.FindAction("LT", throwIfNotFound: true);
     }
 
     ~@OrikeInputConfig()
@@ -300,6 +384,10 @@ public partial class @OrikeInputConfig: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_B;
     private readonly InputAction m_Player_A;
     private readonly InputAction m_Player_X;
+    private readonly InputAction m_Player_RB;
+    private readonly InputAction m_Player_LB;
+    private readonly InputAction m_Player_RT;
+    private readonly InputAction m_Player_LT;
     public struct PlayerActions
     {
         private @OrikeInputConfig m_Wrapper;
@@ -310,6 +398,10 @@ public partial class @OrikeInputConfig: IInputActionCollection2, IDisposable
         public InputAction @B => m_Wrapper.m_Player_B;
         public InputAction @A => m_Wrapper.m_Player_A;
         public InputAction @X => m_Wrapper.m_Player_X;
+        public InputAction @RB => m_Wrapper.m_Player_RB;
+        public InputAction @LB => m_Wrapper.m_Player_LB;
+        public InputAction @RT => m_Wrapper.m_Player_RT;
+        public InputAction @LT => m_Wrapper.m_Player_LT;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -337,6 +429,18 @@ public partial class @OrikeInputConfig: IInputActionCollection2, IDisposable
             @X.started += instance.OnX;
             @X.performed += instance.OnX;
             @X.canceled += instance.OnX;
+            @RB.started += instance.OnRB;
+            @RB.performed += instance.OnRB;
+            @RB.canceled += instance.OnRB;
+            @LB.started += instance.OnLB;
+            @LB.performed += instance.OnLB;
+            @LB.canceled += instance.OnLB;
+            @RT.started += instance.OnRT;
+            @RT.performed += instance.OnRT;
+            @RT.canceled += instance.OnRT;
+            @LT.started += instance.OnLT;
+            @LT.performed += instance.OnLT;
+            @LT.canceled += instance.OnLT;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -359,6 +463,18 @@ public partial class @OrikeInputConfig: IInputActionCollection2, IDisposable
             @X.started -= instance.OnX;
             @X.performed -= instance.OnX;
             @X.canceled -= instance.OnX;
+            @RB.started -= instance.OnRB;
+            @RB.performed -= instance.OnRB;
+            @RB.canceled -= instance.OnRB;
+            @LB.started -= instance.OnLB;
+            @LB.performed -= instance.OnLB;
+            @LB.canceled -= instance.OnLB;
+            @RT.started -= instance.OnRT;
+            @RT.performed -= instance.OnRT;
+            @RT.canceled -= instance.OnRT;
+            @LT.started -= instance.OnLT;
+            @LT.performed -= instance.OnLT;
+            @LT.canceled -= instance.OnLT;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -384,5 +500,9 @@ public partial class @OrikeInputConfig: IInputActionCollection2, IDisposable
         void OnB(InputAction.CallbackContext context);
         void OnA(InputAction.CallbackContext context);
         void OnX(InputAction.CallbackContext context);
+        void OnRB(InputAction.CallbackContext context);
+        void OnLB(InputAction.CallbackContext context);
+        void OnRT(InputAction.CallbackContext context);
+        void OnLT(InputAction.CallbackContext context);
     }
 }

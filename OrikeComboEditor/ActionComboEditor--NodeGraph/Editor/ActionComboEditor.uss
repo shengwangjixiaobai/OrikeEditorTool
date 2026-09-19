@@ -5,3 +5,13 @@
 .timeline-splitter-hit-area {
     cursor: resize-horizontal;
 }
+
+.action-node.action-node--active {
+    border-width: 2px;
+    border-color: rgb(255, 200, 32);
+}
+
+.entry-node {
+    border-width: 2px;
+    border-color: rgb(90, 170, 90);
+}

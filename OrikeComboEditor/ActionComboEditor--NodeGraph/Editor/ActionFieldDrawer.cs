@@ -276,9 +276,7 @@ namespace Orike.ActionGraph
                 // 整行绘制（窗口时限附在末尾），
                 // 避免窄节点下 LabelField 双列截断序列
                 string window =
-                    command.timeLimit > 0f
-                        ? $"  （{command.timeLimit:0.##}s 内）"
-                        : "  （无时限）";
+                    $"  （{command.timeLimit:0.0#}s 内）";
 
                 EditorGUILayout.LabelField(
                     sequence +
@@ -328,7 +326,7 @@ namespace Orike.ActionGraph
                     }
 
                     builder.Append(
-                        beCancel.Tag);
+                        beCancel.TagsString);
 
                     builder.Append(
                         ',');

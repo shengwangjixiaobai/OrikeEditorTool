@@ -90,17 +90,79 @@ namespace Orike.ActionGraph
             action.NodePosition =
                 nodePosition;
 
+            RegisterNewAction(
+                graph,
+                action,
+                "Add Action");
+
+            return action;
+        }
+
+
+        /// <summary>
+        /// 从序列化 JSON 复制出一个 Action 子资源（复制粘贴用）。
+        /// 保留原 Action 的字段（ActionData、Cancel/BeCancel、KeyCommands 等），
+        /// 生成新的唯一 Id 并放在指定位置。
+        /// </summary>
+        public static Action PasteAction(
+            ActionGraphData graph,
+            string json,
+            Vector2 nodePosition)
+        {
+            if (graph == null ||
+                string.IsNullOrEmpty(json))
+            {
+                return null;
+            }
+
+            Action action =
+                ScriptableObject.CreateInstance<Action>();
+
+            EditorJsonUtility.FromJsonOverwrite(
+                json,
+                action);
+
+            action.Id =
+                UniqueId(
+                    graph,
+                    string.IsNullOrEmpty(action.Id)
+                        ? "Action"
+                        : action.Id);
+
+            action.name =
+                action.Id;
+
+            action.NodePosition =
+                nodePosition;
+
+            RegisterNewAction(
+                graph,
+                action,
+                "Paste Action");
+
+            return action;
+        }
+
+
+        /// <summary>
+        /// 将新建的 Action 注册为 graph 的子资源，并登记 Undo / 保存。
+        /// </summary>
+        private static void RegisterNewAction(
+            ActionGraphData graph,
+            Action action,
+            string undoName)
+        {
             AssetDatabase.AddObjectToAsset(
                 action,
                 graph);
 
             Undo.RegisterCreatedObjectUndo(
                 action,
-                "Add Action");
+                undoName);
 
             Undo.RecordObject(
                 graph,
-                "Add Action");
+                undoName);
 
             graph.Actions.Add(
                 action);
@@ -113,8 +175,6 @@ namespace Orike.ActionGraph
 
             AssetDatabase.SaveAssetIfDirty(
                 graph);
-
-            return action;
         }
 
 

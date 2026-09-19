@@ -61,8 +61,13 @@ public class EffectClipData
             maxDuration = 1f;
         }
 
-        Length =
-            maxDuration;
+        // 仅在 Length 尚未初始化时用粒子时长为默认值；
+        // 已被裁剪过后要保留用户设置的 Length，避免刷新/加载时丢失裁剪。
+        if (Length <= 0f)
+        {
+            Length =
+                maxDuration;
+        }
 
         EndTime =
             StartTime +

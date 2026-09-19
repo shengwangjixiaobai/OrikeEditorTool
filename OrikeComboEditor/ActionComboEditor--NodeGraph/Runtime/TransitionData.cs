@@ -48,12 +48,12 @@ namespace Orike.ActionGraph
 
         /// <summary>
         /// 过渡时长。
-        /// 归一化模式：相对来源动作总时长（0.25 = 来源时长的 25%）；
+        /// 归一化模式：相对来源动作总时长（0.1 = 来源时长的 10%）；
         /// 秒模式：单位为秒。
         /// </summary>
         [UnityEngine.Range(0f, 1f)]
         public float TransitionDuration =
-            0.25f;
+            0.1f;
 
         /// <summary>
         /// 目标动画起始点。
@@ -71,6 +71,16 @@ namespace Orike.ActionGraph
         /// </summary>
         [UnityEngine.Range(0f, 1f)]
         public float TransitionTime;
+
+        /// <summary>
+        /// 过渡触发点（归一化 0~1，相对来源动作）。
+        /// 指定来源动作播放到哪个进度时开始过渡。
+        /// 1（默认）= 来源播完时触发。
+        /// Auto 连线运行时也使用此值。
+        /// </summary>
+        [UnityEngine.Range(0f, 1f)]
+        public float TriggerTime =
+            1f;
 
         /// <summary>
         /// 该 Transition 的额外切换优先级。
@@ -154,11 +164,7 @@ namespace Orike.ActionGraph
 
         /// <summary>
         /// “结束自动转移”实际开始混合的时刻（秒，相对来源动作起点）。
-        ///
-        /// 取“来源结束时刻 - 剩余混合时长”，
-        /// 使过渡的终点恰好落在来源动作播完时：
-        ///   TransitionTime 越小（从头渐变），过渡越早开始；
-        ///   TransitionTime = 1 时触发点即结尾（等效播完瞬切）。
+        /// 直接使用 TriggerTime × 来源动作总时长。
         /// </summary>
         public float GetAutoTriggerTime(
             ActionData fromData)
@@ -167,23 +173,8 @@ namespace Orike.ActionGraph
                 ActionDataUtility.GetDuration(
                     fromData);
 
-            float fadeDuration =
-                GetFadeDurationSeconds(
-                    fromData);
-
-            float remainingFade =
-                (1f - UnityEngine.Mathf.Clamp01(
-                    TransitionTime)) *
-                fadeDuration;
-
-            float trigger =
-                sourceDuration -
-                remainingFade;
-
-            return UnityEngine.Mathf.Clamp(
-                trigger,
-                0f,
-                sourceDuration);
+            return UnityEngine.Mathf.Clamp01(
+                TriggerTime) * sourceDuration;
         }
     }
 }

@@ -452,7 +452,8 @@ public class ActionPreviewSystem
         {
             pointEvent
                 .PointEvent
-                .OnCall();
+                .OnCall(
+                    _character);
         }
     }
 

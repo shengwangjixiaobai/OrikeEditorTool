@@ -26,6 +26,21 @@ namespace Orike.ActionGraph
             new Dictionary<Action, ActionNodeView>();
 
         /// <summary>
+        /// 当前被运行时高亮的节点（对应角色正在播放的动作）。
+        /// </summary>
+        private ActionNodeView _activeNode;
+
+        /// <summary>
+        /// 图中的“入口”节点视图。
+        /// </summary>
+        private EntryNodeView _entryNode;
+
+        /// <summary>
+        /// 入口节点到入口动作的连线视图。
+        /// </summary>
+        private Edge _entryEdge;
+
+        /// <summary>
         /// 正在以数据为准整体重建视图时为 true。
         /// 重建过程中的 DeleteElements 同样会触发
         /// graphViewChanged，必须跳过数据同步，
@@ -41,6 +56,13 @@ namespace Orike.ActionGraph
         /// </summary>
         private readonly List<Edge> _rejectedEdges =
             new List<Edge>();
+
+        /// <summary>
+        /// 复制到剪贴板的 Action 序列化 JSON（用于 Ctrl+C / Ctrl+V）。
+        /// 入口节点不参与复制。
+        /// </summary>
+        private readonly List<string> _copyBuffer =
+            new List<string>();
 
 
         public ActionGraphData Graph =>
@@ -136,6 +158,15 @@ namespace Orike.ActionGraph
             _isLoading =
                 true;
 
+            // 保存当前选中的 Action / Transition，
+            // 重建后恢复选中状态，避免 Inspector 丢失选中
+            Action selectedAction =
+                GetSelectedNode()?.Action;
+
+            TransitionData selectedTransition =
+                GetSelectedEdge()?.userData
+                    as TransitionData;
+
             try
             {
                 _graph =
@@ -145,6 +176,15 @@ namespace Orike.ActionGraph
                     graphElements.ToList());
 
                 _nodeViews.Clear();
+
+                _activeNode =
+                    null;
+
+                _entryNode =
+                    null;
+
+                _entryEdge =
+                    null;
 
                 if (graph == null)
                 {
@@ -179,6 +219,33 @@ namespace Orike.ActionGraph
 
                     CreateEdgeView(
                         transition);
+                }
+
+                // 入口节点（含入口连线）
+                CreateEntryNode(
+                    graph);
+
+                // 恢复选中状态
+                if (selectedAction != null &&
+                    _nodeViews.TryGetValue(
+                        selectedAction,
+                        out ActionNodeView nodeToSelect))
+                {
+                    AddToSelection(
+                        nodeToSelect);
+                }
+                else if (selectedTransition != null)
+                {
+                    foreach (Edge edge in edges.ToList())
+                    {
+                        if (edge.userData == selectedTransition)
+                        {
+                            AddToSelection(
+                                edge);
+
+                            break;
+                        }
+                    }
                 }
             }
             finally
@@ -261,6 +328,109 @@ namespace Orike.ActionGraph
 
 
         /// <summary>
+        /// 创建“入口”节点，并根据 graph.EntryAction 恢复入口连线。
+        /// </summary>
+        private void CreateEntryNode(
+            ActionGraphData graph)
+        {
+            _entryNode =
+                new EntryNodeView(
+                    graph);
+
+            Vector2 position;
+
+            if (graph.HasEntryNodePosition)
+            {
+                position =
+                    graph.EntryNodePosition;
+            }
+            else
+            {
+                // 首次打开：放到最左节点左侧，避免与 Action 节点重叠
+                float minX =
+                    float.MaxValue;
+
+                float minY =
+                    float.MaxValue;
+
+                foreach (ActionNodeView node in _nodeViews.Values)
+                {
+                    Vector2 nodePos =
+                        node.GetPosition().position;
+
+                    minX =
+                        Mathf.Min(
+                            minX,
+                            nodePos.x);
+
+                    minY =
+                        Mathf.Min(
+                            minY,
+                            nodePos.y);
+                }
+
+                if (minX == float.MaxValue)
+                {
+                    minX =
+                        0f;
+
+                    minY =
+                        0f;
+                }
+
+                position =
+                    new Vector2(
+                        minX - 260f,
+                        minY);
+
+                graph.EntryNodePosition =
+                    position;
+            }
+
+            _entryNode.SetPosition(
+                new Rect(
+                    position,
+                    Vector2.zero));
+
+            AddElement(
+                _entryNode);
+
+            if (graph.EntryAction == null ||
+                !_nodeViews.TryGetValue(
+                    graph.EntryAction,
+                    out ActionNodeView target))
+            {
+                return;
+            }
+
+            Edge edge =
+                new Edge
+                {
+                    userData =
+                        graph.EntryAction,
+
+                    output =
+                        _entryNode.OutputPort,
+
+                    input =
+                        target.AutoInputPort,
+                };
+
+            _entryNode.OutputPort.Connect(
+                edge);
+
+            target.AutoInputPort.Connect(
+                edge);
+
+            AddElement(
+                edge);
+
+            _entryEdge =
+                edge;
+        }
+
+
+        /// <summary>
         /// 在画布世界坐标处创建 Action 数据与节点。
         /// </summary>
         public ActionNodeView CreateActionAt(
@@ -304,6 +474,179 @@ namespace Orike.ActionGraph
             {
                 node.RefreshLabels();
             }
+        }
+
+
+        /// <summary>
+        /// 高亮当前运行时动作对应的节点。
+        /// 传入 null 时清除高亮。
+        /// </summary>
+        public void SetActiveAction(
+            Action action)
+        {
+            ActionNodeView newActive =
+                null;
+
+            if (action != null)
+            {
+                _nodeViews.TryGetValue(
+                    action,
+                    out newActive);
+            }
+
+            if (_activeNode == newActive)
+            {
+                return;
+            }
+
+            if (_activeNode != null)
+            {
+                _activeNode.SetActive(
+                    false);
+            }
+
+            _activeNode =
+                newActive;
+
+            if (_activeNode != null)
+            {
+                _activeNode.SetActive(
+                    true);
+
+                // 追踪：把新建高亮的节点平移到视口中心，避免超出屏幕
+                FrameNode(
+                    _activeNode);
+            }
+
+            MarkDirtyRepaint();
+        }
+
+
+        /// <summary>
+        /// 将指定节点平移到视口中心（运行时追踪高亮 / 定位入口用）。
+        /// </summary>
+        public void FrameNode(
+            Node node)
+        {
+            if (node == null)
+            {
+                return;
+            }
+
+            Vector2 nodeCenterInView =
+                contentViewContainer.ChangeCoordinatesTo(
+                    this,
+                    node.GetPosition().center);
+
+            Vector2 viewportCenter =
+                localBound.center;
+
+            Vector3 position =
+                contentViewContainer.transform.position;
+
+            contentViewContainer.transform.position =
+                new Vector3(
+                    position.x +
+                    (viewportCenter.x -
+                     nodeCenterInView.x),
+
+                    position.y +
+                    (viewportCenter.y -
+                     nodeCenterInView.y),
+
+                    position.z);
+        }
+
+
+        /// <summary>
+        /// 定位并选中入口节点（工具栏“定位入口”按钮用）。
+        /// </summary>
+        public void FrameEntryNode()
+        {
+            if (_entryNode == null)
+            {
+                return;
+            }
+
+            FrameNode(
+                _entryNode);
+
+            ClearSelection();
+
+            AddToSelection(
+                _entryNode);
+        }
+
+
+        /// <summary>
+        /// 用 Sugiyama 分层布局重排所有 Action 节点与入口节点。
+        /// 记录 Undo、写回各 Action.NodePosition、保存后整体缩放到合适视野。
+        /// </summary>
+        public void ApplyAutoLayout()
+        {
+            if (_graph == null ||
+                _nodeViews.Count == 0)
+            {
+                return;
+            }
+
+            ActionGraphAutoLayout.Compute(
+                _graph,
+                out Dictionary<Action, Vector2> positions,
+                out Vector2 entryPosition);
+
+            if (positions.Count == 0)
+            {
+                return;
+            }
+
+            Undo.SetCurrentGroupName(
+                "Auto Layout Action Graph");
+
+            Undo.RecordObject(
+                _graph,
+                "Auto Layout");
+
+            foreach (KeyValuePair<Action, Vector2> kv in positions)
+            {
+                Undo.RecordObject(
+                    kv.Key,
+                    "Auto Layout");
+
+                kv.Key.NodePosition =
+                    kv.Value;
+
+                if (_nodeViews.TryGetValue(
+                        kv.Key,
+                        out ActionNodeView node))
+                {
+                    node.SetPosition(
+                        new Rect(
+                            kv.Value,
+                            Vector2.zero));
+                }
+
+                EditorUtility.SetDirty(
+                    kv.Key);
+            }
+
+            if (_entryNode != null)
+            {
+                _entryNode.SetPosition(
+                    new Rect(
+                        entryPosition,
+                        Vector2.zero));
+            }
+
+            EditorUtility.SetDirty(
+                _graph);
+
+            AssetDatabase.SaveAssetIfDirty(
+                _graph);
+
+            FrameAll();
+
+            MarkDirtyRepaint();
         }
 
 
@@ -424,9 +767,6 @@ namespace Orike.ActionGraph
         public override void BuildContextualMenu(
             ContextualMenuPopulateEvent evt)
         {
-            base.BuildContextualMenu(
-                evt);
-
             if (_graph == null)
             {
                 return;
@@ -438,17 +778,37 @@ namespace Orike.ActionGraph
                     : worldBound.center;
 
             evt.menu.AppendAction(
-                "添加 Action 节点",
+                "Add Action Node",
                 menuAction =>
                 {
                     CreateActionAt(
                         menuWorldPosition);
                 });
 
+            if (selection.OfType<ActionNodeView>().Any())
+            {
+                evt.menu.AppendAction(
+                    "Copy",
+                    menuAction =>
+                    {
+                        CopySelection();
+                    });
+            }
+
+            if (_copyBuffer.Count > 0)
+            {
+                evt.menu.AppendAction(
+                    "Paste",
+                    menuAction =>
+                    {
+                        PasteCopied();
+                    });
+            }
+
             if (selection.Count > 0)
             {
                 evt.menu.AppendAction(
-                    "删除选中",
+                    "Delete",
                     menuAction =>
                     {
                         DeleteSelection();
@@ -474,6 +834,30 @@ namespace Orike.ActionGraph
                 return;
             }
 
+            bool command =
+                evt.commandKey ||
+                evt.ctrlKey;
+
+            if (command &&
+                evt.keyCode == KeyCode.C)
+            {
+                CopySelection();
+
+                evt.StopPropagation();
+
+                return;
+            }
+
+            if (command &&
+                evt.keyCode == KeyCode.V)
+            {
+                PasteCopied();
+
+                evt.StopPropagation();
+
+                return;
+            }
+
             if (evt.keyCode == KeyCode.Delete ||
                 evt.keyCode == KeyCode.Backspace)
             {
@@ -483,6 +867,77 @@ namespace Orike.ActionGraph
 
                     evt.StopPropagation();
                 }
+            }
+        }
+
+
+        // =========================================================
+        // 复制 / 粘贴
+        // =========================================================
+
+        /// <summary>
+        /// 把选中 Action 节点序列化到剪贴板（Ctrl+C）。
+        /// </summary>
+        private void CopySelection()
+        {
+            _copyBuffer.Clear();
+
+            foreach (ActionNodeView node in
+                     selection.OfType<ActionNodeView>())
+            {
+                if (node.Action == null)
+                {
+                    continue;
+                }
+
+                _copyBuffer.Add(
+                    EditorJsonUtility.ToJson(
+                        node.Action));
+            }
+        }
+
+
+        /// <summary>
+        /// 粘贴剪贴板中的 Action（Ctrl+V）。
+        /// 依次从视口中心开始放置，并逐个右下偏移。
+        /// </summary>
+        private void PasteCopied()
+        {
+            if (_graph == null ||
+                _copyBuffer.Count == 0)
+            {
+                return;
+            }
+
+            Vector2 anchor =
+                worldBound.center;
+
+            foreach (string json in _copyBuffer)
+            {
+                Vector2 localPosition =
+                    contentViewContainer.WorldToLocal(
+                        anchor);
+
+                Action action =
+                    ActionGraphAssetOps.PasteAction(
+                        _graph,
+                        json,
+                        localPosition);
+
+                ActionNodeView node =
+                    AddActionNode(
+                        action);
+
+                if (node != null)
+                {
+                    AddToSelection(
+                        node);
+                }
+
+                anchor +=
+                    new Vector2(
+                        40f,
+                        40f);
             }
         }
 
@@ -512,11 +967,21 @@ namespace Orike.ActionGraph
                 foreach (GraphElement element
                          in change.elementsToRemove.ToList())
                 {
-                    if (element is Edge edge &&
-                        edge.userData is TransitionData transition)
+                    if (element is Edge edge)
                     {
-                        RemoveTransitionData(
-                            transition);
+                        // 入口连线：删除即清除入口
+                        if (edge.output?.node is EntryNodeView)
+                        {
+                            ClearEntry();
+
+                            continue;
+                        }
+
+                        if (edge.userData is TransitionData transition)
+                        {
+                            RemoveTransitionData(
+                                transition);
+                        }
                     }
                     else if (element is ActionNodeView node)
                     {
@@ -543,6 +1008,16 @@ namespace Orike.ActionGraph
 
                 foreach (Edge edge in change.edgesToCreate)
                 {
+                    // 入口连线：从“入口”节点连接到某个 Action
+                    if (edge.output?.node is EntryNodeView)
+                    {
+                        TryCreateEntryEdge(
+                            edge,
+                            accepted);
+
+                        continue;
+                    }
+
                     ActionNodeView fromNode =
                         edge.output != null
                             ? edge.output.node as ActionNodeView
@@ -598,10 +1073,8 @@ namespace Orike.ActionGraph
                     bool tagMatched =
                         fromBeCancel != null &&
                         toCancel != null &&
-                        !string.IsNullOrEmpty(
-                            fromBeCancel.Tag) &&
-                        fromBeCancel.Tag ==
-                        toCancel.Tag;
+                        fromBeCancel.HasTag(
+                            toCancel.Tag);
 
                     if (!tagMatched)
                     {
@@ -613,22 +1086,6 @@ namespace Orike.ActionGraph
                             _window.ShowNotification(
                                 new GUIContent(
                                     "连接失败：From 的 BeCancel Tag 与 To 的 Cancel Tag 不一致"));
-                        }
-
-                        continue;
-                    }
-
-                    // 相同 From -> To 已存在，拒绝重复
-                    if (_graph.HasTransition(from, to))
-                    {
-                        RejectEdge(
-                            edge);
-
-                        if (_window != null)
-                        {
-                            _window.ShowNotification(
-                                new GUIContent(
-                                    "连接失败：这两个 Action 之间已存在连线"));
                         }
 
                         continue;
@@ -766,6 +1223,92 @@ namespace Orike.ActionGraph
 
             accepted.Add(
                 edge);
+        }
+
+
+        /// <summary>
+        /// 处理“入口”节点的连线创建：把目标 Action 设为入口动作。
+        /// 入口唯一，已存在入口连线时拒绝新建。
+        /// </summary>
+        private void TryCreateEntryEdge(
+            Edge edge,
+            List<Edge> accepted)
+        {
+            ActionNodeView toNode =
+                edge.input != null
+                    ? edge.input.node as ActionNodeView
+                    : null;
+
+            if (toNode == null ||
+                edge.input != toNode.AutoInputPort)
+            {
+                RejectEdge(
+                    edge);
+
+                return;
+            }
+
+            if (_graph.EntryAction != null)
+            {
+                RejectEdge(
+                    edge);
+
+                _window?.ShowNotification(
+                    new GUIContent(
+                        "入口已存在，请先删除当前入口连线"));
+
+                return;
+            }
+
+            Undo.RecordObject(
+                _graph,
+                "Set Entry");
+
+            _graph.EntryAction =
+                toNode.Action;
+
+            EditorUtility.SetDirty(
+                _graph);
+
+            AssetDatabase.SaveAssetIfDirty(
+                _graph);
+
+            edge.userData =
+                toNode.Action;
+
+            _entryEdge =
+                edge;
+
+            accepted.Add(
+                edge);
+        }
+
+
+        /// <summary>
+        /// 清除入口动作（记录 Undo 并保存）。
+        /// </summary>
+        private void ClearEntry()
+        {
+            if (_graph == null)
+            {
+                return;
+            }
+
+            Undo.RecordObject(
+                _graph,
+                "Clear Entry");
+
+            _graph.EntryAction =
+                null;
+
+            EditorUtility.SetDirty(
+                _graph);
+
+            AssetDatabase.SaveAssetIfDirty(
+                _graph);
+
+            _entryEdge =
+                null;
         }
 
 

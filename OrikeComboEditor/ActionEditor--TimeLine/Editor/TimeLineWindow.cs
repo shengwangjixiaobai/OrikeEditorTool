@@ -15,6 +15,10 @@ public class TimeLineWindow : EditorWindow
 
     private const float InspectorWidth = 280f;
 
+    private const float InspectorMinWidth = 240f;
+
+    private const float InspectorMaxWidth = 360f;
+
     private const float SplitterWidth = 3f;
     private const float SplitterHitWidth = 10f;
 
@@ -182,6 +186,20 @@ public class TimeLineWindow : EditorWindow
     private bool _isDraggingSplitter;
 
     private int _splitterPointerId;
+
+
+    // Inspector 左侧分隔条（拖拽调整 Inspector 宽度）
+
+    private VisualElement _inspectorSplitter;
+
+    private VisualElement _inspectorSplitterHitArea;
+
+    private bool _isDraggingInspectorSplitter;
+
+    private int _inspectorSplitterPointerId;
+
+    private float _inspectorWidth =
+        InspectorWidth;
 
 
     // =========================================================
@@ -353,6 +371,8 @@ public class TimeLineWindow : EditorWindow
         CreateSplitter();
 
         CreateRightPanel();
+
+        CreateInspectorSplitter();
 
         CreateInspectorPanel();
 
@@ -1105,6 +1125,203 @@ public class TimeLineWindow : EditorWindow
 
 
     // =========================================================
+    // Inspector Splitter
+    // =========================================================
+
+    private void CreateInspectorSplitter()
+    {
+        _inspectorSplitter =
+            new VisualElement();
+
+        _inspectorSplitter.style.width =
+            SplitterWidth;
+
+        _inspectorSplitter.style.minWidth =
+            SplitterWidth;
+
+        _inspectorSplitter.style.maxWidth =
+            SplitterWidth;
+
+        _inspectorSplitter.style.flexShrink =
+            0;
+
+        _inspectorSplitter.style.backgroundColor =
+            new Color(
+                0.055f,
+                0.055f,
+                0.055f);
+
+        _inspectorSplitterHitArea =
+            new VisualElement();
+
+        _inspectorSplitterHitArea.style.position =
+            Position.Absolute;
+
+        _inspectorSplitterHitArea.style.left =
+            -(SplitterHitWidth -
+              SplitterWidth) / 2f;
+
+        _inspectorSplitterHitArea.style.top =
+            0;
+
+        _inspectorSplitterHitArea.style.bottom =
+            0;
+
+        _inspectorSplitterHitArea.style.width =
+            SplitterHitWidth;
+
+        _inspectorSplitterHitArea.pickingMode =
+            PickingMode.Position;
+
+        _inspectorSplitter.Add(
+            _inspectorSplitterHitArea);
+
+        // TimeLineWindow.uss 里的光标样式
+        _inspectorSplitter.AddToClassList(
+            "timeline-splitter");
+
+        _inspectorSplitterHitArea.AddToClassList(
+            "timeline-splitter-hit-area");
+
+        _inspectorSplitterHitArea.RegisterCallback<
+            PointerDownEvent>(
+            OnInspectorSplitterPointerDown);
+
+        _inspectorSplitterHitArea.RegisterCallback<
+            PointerMoveEvent>(
+            OnInspectorSplitterPointerMove);
+
+        _inspectorSplitterHitArea.RegisterCallback<
+            PointerUpEvent>(
+            OnInspectorSplitterPointerUp);
+
+        _root.Add(
+            _inspectorSplitter);
+    }
+
+
+    /// <summary>
+    /// Inspector 随 ActionData 一起创建 / 移除，
+    /// 分隔条也要跟着显示 / 隐藏。
+    /// </summary>
+    private void SetInspectorSplitterVisible(
+        bool visible)
+    {
+        if (_inspectorSplitter == null)
+        {
+            return;
+        }
+
+        _inspectorSplitter.style.display =
+            visible
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+    }
+
+
+    private void ApplyInspectorWidth()
+    {
+        if (_inspectorView == null)
+        {
+            return;
+        }
+
+        // 宽度完全由分隔条决定，不再随窗口自动伸缩
+        _inspectorView.style.flexGrow =
+            0;
+
+        _inspectorView.style.width =
+            _inspectorWidth;
+
+        _inspectorView.style.minWidth =
+            InspectorMinWidth;
+
+        _inspectorView.style.maxWidth =
+            InspectorMaxWidth;
+    }
+
+
+    private void OnInspectorSplitterPointerDown(
+        PointerDownEvent evt)
+    {
+        if (evt.button != 0)
+        {
+            return;
+        }
+
+        _isDraggingInspectorSplitter =
+            true;
+
+        _inspectorSplitterPointerId =
+            evt.pointerId;
+
+        _inspectorSplitterHitArea.CapturePointer(
+            evt.pointerId);
+
+        evt.StopPropagation();
+    }
+
+
+    private void OnInspectorSplitterPointerMove(
+        PointerMoveEvent evt)
+    {
+        if (!_isDraggingInspectorSplitter)
+        {
+            return;
+        }
+
+        if (!_inspectorSplitterHitArea
+                .HasPointerCapture(
+                    _inspectorSplitterPointerId))
+        {
+            return;
+        }
+
+        Vector2 rootPosition =
+            _root.WorldToLocal(
+                evt.position);
+
+        // 分隔条左侧是时间轴区域，右边剩下的宽度即 Inspector 宽度
+        float newWidth =
+            _root.resolvedStyle.width -
+            rootPosition.x;
+
+        _inspectorWidth =
+            Mathf.Clamp(
+                newWidth,
+                InspectorMinWidth,
+                InspectorMaxWidth);
+
+        ApplyInspectorWidth();
+
+        evt.StopPropagation();
+    }
+
+
+    private void OnInspectorSplitterPointerUp(
+        PointerUpEvent evt)
+    {
+        if (evt.button != 0)
+        {
+            return;
+        }
+
+        if (_inspectorSplitterHitArea
+            .HasPointerCapture(
+                _inspectorSplitterPointerId))
+        {
+            _inspectorSplitterHitArea.ReleasePointer(
+                _inspectorSplitterPointerId);
+        }
+
+        _isDraggingInspectorSplitter =
+            false;
+
+        evt.StopPropagation();
+    }
+
+
+    // =========================================================
     // Right Timeline Panel
     // =========================================================
 
@@ -1183,20 +1400,16 @@ public class TimeLineWindow : EditorWindow
             new InspectorView(
                 _timeLineController);
 
-        _inspectorView.style.width =
-            InspectorWidth;
-
-        _inspectorView.style.minWidth =
-            240;
-
-        _inspectorView.style.maxWidth =
-            360;
-
         _inspectorView.style.flexShrink =
             0;
 
+        ApplyInspectorWidth();
+
         _root.Add(
             _inspectorView);
+
+        SetInspectorSplitterVisible(
+            true);
     }
 
 
@@ -2378,6 +2591,9 @@ public class TimeLineWindow : EditorWindow
                 _inspectorView.RemoveFromHierarchy();
                 _inspectorView = null;
             }
+
+            SetInspectorSplitterVisible(
+                false);
 
             return;
         }

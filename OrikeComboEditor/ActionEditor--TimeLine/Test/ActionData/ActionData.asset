@@ -12,7 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d319e0de2d0e46d48a25ff02d4343061, type: 3}
   m_Name: ActionData
   m_EditorClassIdentifier: 
-  Tracks: []
+  Tracks:
+  - TrackName: Animation Track 1
+    ClipType: 0
+    Clips: []
+    PointEvents: []
   references:
     version: 2
     RefIds: []

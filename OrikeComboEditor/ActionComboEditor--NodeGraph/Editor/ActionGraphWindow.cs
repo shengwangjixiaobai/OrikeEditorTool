@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using ObjectField = UnityEditor.UIElements.ObjectField;
@@ -37,13 +37,59 @@ namespace Orike.ActionGraph
 
         private ObjectField _characterField;
 
+        /// <summary>
+        /// 运行时调试观察目标：拖入挂 ActionController 的角色。
+        /// 播放时高亮其当前所在 Action 节点。
+        /// </summary>
+        private ObjectField _controllerField;
+
         private Button _addNodeButton;
 
         private Button _saveButton;
 
         private TransitionPreviewSystem _preview;
 
+        /// <summary>
+        /// 单动作预览系统。
+        /// 直接复用 TimeLine 的 ActionPreviewSystem，
+        /// 保证节点编辑器与时间线编辑器预览单个 ActionData 时表现完全一致：
+        /// 动画 / 音效 / 特效 / Hitbox / 持续事件 / 点事件全轨道采样。
+        /// </summary>
+        private ActionPreviewSystem _actionPreview;
+
+        private ActionData _singlePreviewData;
+
+        private GameObject _singlePreviewCharacter;
+
+        private float _singlePreviewTime;
+
+        private bool _singlePreviewLoop;
+
+        /// <summary>
+        /// 单动作预览采样帧率，与 TimeLine 默认 FPS 一致。
+        /// </summary>
+        private const float SinglePreviewFrameRate =
+            60f;
+
         private object _previewKey;
+
+        /// <summary>
+        /// 当前预览模式：None / Single / Transition / FullPlay。
+        /// 单动作预览与过渡预览互斥。
+        /// </summary>
+        private enum PreviewMode
+        {
+            None,
+
+            Single,
+
+            Transition,
+
+            FullPlay,
+        }
+
+        private PreviewMode _previewMode =
+            PreviewMode.None;
 
         private double _lastEditorTime;
 
@@ -60,8 +106,31 @@ namespace Orike.ActionGraph
         /// </summary>
         private TransitionData _manualStopKey;
 
+        /// <summary>
+        /// 上次同步到画布高亮的运行时动作，用于避免无变化时的重复刷新。
+        /// </summary>
+        private Action _lastHighlightedAction;
+
         private const float AutoSaveInterval =
-            2f;
+        2f;
+
+
+        // =========================================================
+        // 会话状态（跨 Play Mode 持久化）
+        //
+        // 进入 / 退出 Play Mode 会触发域（Domain）重载，本窗口
+        // 会被重建，工具栏里选中的 Graph / 预览角色 / 调试角色
+        // 若不落盘到 [SerializeField]，就会一起被清空。
+        // =========================================================
+
+        [SerializeField]
+        private ActionGraphData _graphAsset;
+
+        [SerializeField]
+        private GameObject _previewCharacter;
+
+        [SerializeField]
+        private ActionController _debugController;
 
 
         // =========================================================
@@ -132,6 +201,8 @@ namespace Orike.ActionGraph
 
             BuildContent();
 
+            RestoreState();
+
             EditorApplication.update +=
                 OnEditorUpdate;
 
@@ -170,6 +241,22 @@ namespace Orike.ActionGraph
                 _preview =
                     null;
             }
+
+            if (_actionPreview != null)
+            {
+                _actionPreview.StopPreview();
+
+                _actionPreview.Dispose();
+
+                _actionPreview =
+                    null;
+            }
+
+            _singlePreviewData =
+                null;
+
+            _singlePreviewCharacter =
+                null;
 
             _previewKey =
                 null;
@@ -254,8 +341,11 @@ namespace Orike.ActionGraph
             _graphField.RegisterValueChangedCallback(
                 evt =>
                 {
+                    _graphAsset =
+                        evt.newValue as ActionGraphData;
+
                     LoadGraph(
-                        evt.newValue as ActionGraphData);
+                        _graphAsset);
                 });
 
             toolbar.Add(
@@ -283,6 +373,28 @@ namespace Orike.ActionGraph
 
             toolbar.Add(
                 _addNodeButton);
+
+            Button frameEntryButton =
+                CreateToolbarButton(
+                    "定位入口",
+                    72);
+
+            frameEntryButton.clicked +=
+                OnClickFrameEntry;
+
+            toolbar.Add(
+                frameEntryButton);
+
+            Button autoLayoutButton =
+                CreateToolbarButton(
+                    "自动布局",
+                    72);
+
+            autoLayoutButton.clicked +=
+                OnClickAutoLayout;
+
+            toolbar.Add(
+                autoLayoutButton);
 
             _saveButton =
                 CreateToolbarButton(
@@ -328,8 +440,74 @@ namespace Orike.ActionGraph
             _characterField.style.width =
                 200;
 
+            _characterField.RegisterValueChangedCallback(
+                evt =>
+                {
+                    _previewCharacter =
+                        evt.newValue as GameObject;
+
+                    // 单动作预览运行中切换角色：
+                    // 直接换采样目标并重置到动作开头
+                    if (_previewMode == PreviewMode.Single &&
+                        _actionPreview != null)
+                    {
+                        _actionPreview.SetCharacter(
+                            _previewCharacter);
+
+                        _singlePreviewCharacter =
+                            _previewCharacter;
+
+                        _singlePreviewTime =
+                            0f;
+
+                        if (_previewCharacter != null &&
+                            _singlePreviewData != null)
+                        {
+                            _actionPreview.Preview(
+                                0f,
+                                SinglePreviewFrameRate,
+                                true);
+                        }
+                    }
+                });
+
             toolbar.Add(
                 _characterField);
+
+
+            Label debugLabel =
+                new Label("调试角色");
+
+            debugLabel.style.marginLeft =
+                12;
+
+            debugLabel.style.marginRight =
+                6;
+
+            toolbar.Add(
+                debugLabel);
+
+            _controllerField =
+                new ObjectField();
+
+            _controllerField.objectType =
+                typeof(ActionController);
+
+            _controllerField.allowSceneObjects =
+                true;
+
+            _controllerField.style.width =
+                200;
+
+            _controllerField.RegisterValueChangedCallback(
+                evt =>
+                {
+                    _debugController =
+                        evt.newValue as ActionController;
+                });
+
+            toolbar.Add(
+                _controllerField);
         }
 
 
@@ -575,6 +753,32 @@ namespace Orike.ActionGraph
         }
 
 
+        private void OnClickFrameEntry()
+        {
+            if (Graph == null)
+            {
+                ShowNoGraphWarning();
+
+                return;
+            }
+
+            _graphView.FrameEntryNode();
+        }
+
+
+        private void OnClickAutoLayout()
+        {
+            if (Graph == null)
+            {
+                ShowNoGraphWarning();
+
+                return;
+            }
+
+            _graphView.ApplyAutoLayout();
+        }
+
+
         private void OnClickSave()
         {
             if (Graph == null)
@@ -607,6 +811,41 @@ namespace Orike.ActionGraph
 
 
         // =========================================================
+        // 状态恢复
+        // =========================================================
+
+        /// <summary>
+        /// 域重载后把上次的引用填回工具栏，并重新加载画布。
+        /// </summary>
+        private void RestoreState()
+        {
+            if (_graphField != null &&
+                _graphAsset != null)
+            {
+                _graphField.SetValueWithoutNotify(
+                    _graphAsset);
+
+                LoadGraph(
+                    _graphAsset);
+            }
+
+            if (_characterField != null &&
+                _previewCharacter != null)
+            {
+                _characterField.SetValueWithoutNotify(
+                    _previewCharacter);
+            }
+
+            if (_controllerField != null &&
+                _debugController != null)
+            {
+                _controllerField.SetValueWithoutNotify(
+                    _debugController);
+            }
+        }
+
+
+        // =========================================================
         // 加载
         // =========================================================
 
@@ -619,9 +858,8 @@ namespace Orike.ActionGraph
             }
 
             // 切换 / 重建资产时停止旧预览，
-            // 避免重建过程中选中变化残留的过渡预览
-            if (_preview != null &&
-                _preview.IsRunning)
+            // 避免重建过程中选中变化残留的预览
+            if (HasRunningPreview())
             {
                 StopPreview();
             }
@@ -633,6 +871,10 @@ namespace Orike.ActionGraph
 
             _graphView.LoadGraph(
                 graph);
+
+            // 节点视图整体重建，重置高亮状态，下一帧重新同步
+            _lastHighlightedAction =
+                null;
 
             _inspector?.Invalidate();
         }
@@ -670,19 +912,70 @@ namespace Orike.ActionGraph
         }
 
 
+        /// <summary>
+        /// 调试观察目标控制器：工具栏“调试角色”拖入的 ActionController。
+        /// </summary>
+        private ActionController GetDebugController()
+        {
+            return _controllerField != null
+                ? _controllerField.value as ActionController
+                : null;
+        }
+
+
         public bool IsPreviewingAction(
             Action action)
         {
             return
-                _preview != null &&
-                _preview.IsRunning &&
+                _previewMode == PreviewMode.Single &&
+                _actionPreview != null &&
                 ReferenceEquals(
                     _previewKey,
                     action);
         }
 
 
+        /// <summary>
+        /// 是否有任意一种预览正在运行。
+        /// </summary>
+        private bool HasRunningPreview()
+        {
+            if (_previewMode == PreviewMode.Single)
+            {
+                return _actionPreview != null;
+            }
+
+            return
+                _preview != null &&
+                _preview.IsRunning;
+        }
+
+
         public bool IsPreviewingTransition(
+            TransitionData transition)
+        {
+            return
+                _previewMode == PreviewMode.Transition &&
+                _preview != null &&
+                _preview.IsRunning &&
+                ReferenceEquals(
+                    _previewKey,
+                    transition);
+        }
+
+        public bool IsPreviewingFullPlay(
+            TransitionData transition)
+        {
+            return
+                _previewMode == PreviewMode.FullPlay &&
+                _preview != null &&
+                _preview.IsRunning &&
+                ReferenceEquals(
+                    _previewKey,
+                    transition);
+        }
+
+        public bool IsPreviewingAny(
             TransitionData transition)
         {
             return
@@ -714,14 +1007,47 @@ namespace Orike.ActionGraph
                 return;
             }
 
-            EnsurePreview();
+            if (action.ActionData == null)
+            {
+                return;
+            }
 
-            _preview.StartSingle(
-                character,
-                action.ActionData);
+            // 与过渡预览互斥：先停掉正在运行的过渡 / 完整播放预览
+            StopPreview();
+
+            action.ActionData.RefreshData();
+
+            _actionPreview =
+                new ActionPreviewSystem(
+                    character,
+                    action.ActionData);
+
+            _singlePreviewData =
+                action.ActionData;
+
+            _singlePreviewCharacter =
+                character;
+
+            _singlePreviewLoop =
+                action.Loop;
+
+            _singlePreviewTime =
+                0f;
+
+            // 立即采样第 0 帧，与 TimeLine 按下播放时表现一致
+            _actionPreview.Preview(
+                0f,
+                SinglePreviewFrameRate,
+                true);
 
             _previewKey =
                 action;
+
+            _previewMode =
+                PreviewMode.Single;
+
+            FocusPreviewCharacter(
+                character);
         }
 
 
@@ -743,9 +1069,13 @@ namespace Orike.ActionGraph
             _manualStopKey =
                 null;
 
-            StartTransitionPreview(
-                transition,
-                true);
+            if (StartTransitionPreview(
+                    transition,
+                    true))
+            {
+                _previewMode =
+                    PreviewMode.Transition;
+            }
         }
 
 
@@ -762,15 +1092,20 @@ namespace Orike.ActionGraph
                 return;
             }
 
-            if (IsPreviewingTransition(
+            // 已在预览同一条连线（任何模式）时不自动切换
+            if (IsPreviewingAny(
                     transition))
             {
                 return;
             }
 
-            StartTransitionPreview(
-                transition,
-                false);
+            if (StartTransitionPreview(
+                    transition,
+                    false))
+            {
+                _previewMode =
+                    PreviewMode.Transition;
+            }
         }
 
 
@@ -794,7 +1129,8 @@ namespace Orike.ActionGraph
         /// 手动点击按钮时为 true（缺角色弹框提示）；
         /// 选中连线自动触发时为 false（静默跳过）。
         /// </param>
-        private void StartTransitionPreview(
+        /// <returns>是否成功启动；失败时保留当前预览状态。</returns>
+        private bool StartTransitionPreview(
             TransitionData transition,
             bool showWarning)
         {
@@ -803,7 +1139,7 @@ namespace Orike.ActionGraph
                 transition.From.ActionData == null ||
                 transition.To.ActionData == null)
             {
-                return;
+                return false;
             }
 
             GameObject character =
@@ -816,8 +1152,11 @@ namespace Orike.ActionGraph
                     ShowNoCharacterWarning();
                 }
 
-                return;
+                return false;
             }
+
+            // 停掉可能正在运行的单动作预览（两者互斥）
+            StopPreview();
 
             EnsurePreview();
 
@@ -829,15 +1168,169 @@ namespace Orike.ActionGraph
 
             _previewKey =
                 transition;
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// 完整播放预览：来源从头播到尾 → 过渡 → 目标播到尾。
+        /// 再次点击同一条连线的完整播放时切换为停止。
+        /// </summary>
+        public void ToggleFullPlayPreview(
+            TransitionData transition)
+        {
+            if (IsPreviewingFullPlay(transition))
+            {
+                _manualStopKey =
+                    transition;
+
+                StopPreview();
+
+                return;
+            }
+
+            _manualStopKey =
+                null;
+
+            if (transition == null ||
+                transition.From == null ||
+                transition.To == null ||
+                transition.From.ActionData == null ||
+                transition.To.ActionData == null)
+            {
+                return;
+            }
+
+            GameObject character =
+                GetPreviewCharacter();
+
+            if (character == null)
+            {
+                ShowNoCharacterWarning();
+
+                return;
+            }
+
+            // 停掉可能正在运行的单动作预览（两者互斥）
+            StopPreview();
+
+            EnsurePreview();
+
+            _preview.StartFullPlay(
+                character,
+                transition.From.ActionData,
+                transition.To.ActionData,
+                transition);
+
+            _previewKey =
+                transition;
+
+            _previewMode =
+                PreviewMode.FullPlay;
         }
 
 
         private void StopPreview()
         {
+            // 单动作预览：停采样并销毁特效 / Hitbox 实例，
+            // 反注册 SceneView 绘制回调
+            if (_actionPreview != null)
+            {
+                _actionPreview.StopPreview();
+
+                _actionPreview.Dispose();
+
+                _actionPreview =
+                    null;
+            }
+
+            _singlePreviewData =
+                null;
+
+            _singlePreviewCharacter =
+                null;
+
+            _singlePreviewTime =
+                0f;
+
+            _singlePreviewLoop =
+                false;
+
+            // 过渡预览：恢复 Animator 状态
             _preview?.Stop();
 
             _previewKey =
                 null;
+
+            _previewMode =
+                PreviewMode.None;
+        }
+
+
+        /// <summary>
+        /// 单动作预览每帧驱动：
+        /// 直接复用 TimeLine 的 ActionPreviewSystem 采样整个 ActionData，
+        /// 动画 / 音效 / 特效 / Hitbox / 事件表现与时间线编辑器完全一致。
+        /// 循环动作按动作总时长取模；非循环动作停在结尾最后一帧。
+        /// </summary>
+        private void TickSingleActionPreview(
+            float deltaTime)
+        {
+            if (_actionPreview == null ||
+                _singlePreviewData == null)
+            {
+                return;
+            }
+
+            _singlePreviewTime +=
+                deltaTime;
+
+            float duration =
+                ActionDataUtility.GetDuration(
+                    _singlePreviewData);
+
+            if (duration > 0f)
+            {
+                _singlePreviewTime =
+                    _singlePreviewLoop
+                        ? Mathf.Repeat(
+                            _singlePreviewTime,
+                            duration)
+                        : Mathf.Min(
+                            _singlePreviewTime,
+                            duration);
+            }
+
+            // Voice 的“一帧播放”停止计时
+            _actionPreview.Update();
+
+            _actionPreview.Preview(
+                _singlePreviewTime,
+                SinglePreviewFrameRate,
+                true);
+        }
+
+
+        /// <summary>
+        /// 预览开始时把 Scene 视图聚焦到角色（与过渡预览一致）。
+        /// </summary>
+        private static void FocusPreviewCharacter(
+            GameObject character)
+        {
+            SceneView sceneView =
+                SceneView.lastActiveSceneView;
+
+            if (sceneView != null &&
+                character != null)
+            {
+                sceneView.LookAt(
+                    character.transform.position,
+                    sceneView.rotation,
+                    2f,
+                    false,
+                    true);
+            }
         }
 
 
@@ -870,6 +1363,8 @@ namespace Orike.ActionGraph
 
             SyncAutoPreviewFromSelection();
 
+            SyncRuntimeHighlight();
+
             // 延迟自动保存：停止输入 2 秒后统一写盘
             if (Graph != null)
             {
@@ -887,8 +1382,15 @@ namespace Orike.ActionGraph
                 }
             }
 
-            if (_preview != null &&
-                _preview.IsRunning)
+            if (_previewMode == PreviewMode.Single)
+            {
+                TickSingleActionPreview(
+                    deltaTime);
+
+                Repaint();
+            }
+            else if (_preview != null &&
+                     _preview.IsRunning)
             {
                 _preview.Tick(
                     deltaTime);
@@ -949,6 +1451,44 @@ namespace Orike.ActionGraph
 
                 StopAutoTransitionPreview();
             }
+        }
+
+
+        /// <summary>
+        /// 运行时高亮同步：读取“调试角色”控制器当前动作，
+        /// 高亮画布上对应的节点。仅在播放中、且已指定控制器时生效。
+        /// </summary>
+        private void SyncRuntimeHighlight()
+        {
+            if (_graphView == null)
+            {
+                return;
+            }
+
+            Action current = null;
+
+            if (EditorApplication.isPlaying)
+            {
+                ActionController controller =
+                    GetDebugController();
+
+                if (controller != null)
+                {
+                    current =
+                        controller.Current;
+                }
+            }
+
+            if (_lastHighlightedAction == current)
+            {
+                return;
+            }
+
+            _lastHighlightedAction =
+                current;
+
+            _graphView.SetActiveAction(
+                current);
         }
     }
 }

@@ -105,7 +105,7 @@ namespace Orike.ActionGraph
             foreach (BeCancelData beCancel in BeCancels)
             {
                 if (beCancel != null &&
-                    beCancel.Tag == tag)
+                    beCancel.HasTag(tag))
                 {
                     return beCancel;
                 }
@@ -116,18 +116,18 @@ namespace Orike.ActionGraph
 
 
         /// <summary>
-        /// 当前播放时间是否允许被指定 Tag 取消。
+        /// 当前播放进度（归一化 0~1）是否允许被指定 Tag 取消。
         /// </summary>
         public bool CanBeCanceled(
             string tag,
-            float actionTime)
+            float normalizedTime)
         {
             BeCancelData beCancel =
                 FindBeCancel(tag);
 
             return
                 beCancel != null &&
-                beCancel.ContainsTime(actionTime);
+                beCancel.ContainsTime(normalizedTime);
         }
     }
 }

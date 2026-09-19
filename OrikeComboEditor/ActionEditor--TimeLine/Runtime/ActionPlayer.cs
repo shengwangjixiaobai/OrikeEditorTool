@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
+using Object = UnityEngine.Object;
 
 /// <summary>
 /// Action 播放器。
 ///
-/// 挂在角色对象上，负责播放角色的 ActionData。
-/// 播放时会按时间推进 ActionData 中的各类轨道。
+/// 纯播放逻辑，不挂载 Component，由 ActionController 直接 new 出来使用。
+/// 播放时按时间推进传入的 ActionData 中的各类轨道。
 ///
 ///   - 使用 PlayableGraph 和 AnimationMixer，支持 CrossFade。
 ///   - CrossFade：归一化过渡，时长相对当前动作、起点相对目标动作。
@@ -21,32 +22,34 @@ using UnityEngine.Playables;
 ///
 /// 主要接口：
 ///   Play(action)              立即播放动作。
-///   CrossFade(action, 0.25f)  淡入播放另一个动作。
+///   CrossFade(action, 0.1f)  淡入播放另一个动作。
 ///   Stop / Pause / Resume
+///   Tick(deltaTime)           由持有者每帧驱动。
 /// </summary>
-public class ActionPlayer : MonoBehaviour
+public class ActionPlayer
 {
     // =========================================================
-    // 配置
+    // 持有对象
     // =========================================================
 
     /// <summary>
-    /// 拥有这些 Action 的角色。为空时使用当前 GameObject。
+    /// 播放器输出的目标角色（用于挂 Animator / AudioSource / 特效等）。
+    /// 由 ActionController 在构造时传入。
     /// </summary>
-    public GameObject master;
-
-    /// <summary>
-    /// 角色拥有的全部 ActionData。
-    /// 也可以通过名称查找并播放，例如 Play("Idle")。
-    /// </summary>
-    public List<ActionData> Actions =
-        new List<ActionData>();
+    private readonly GameObject _owner;
 
     /// <summary>
     /// CrossFade 默认持续时间，单位为秒。
     /// </summary>
     public float DefaultCrossFadeDuration =
-        0.25f;
+        0.1f;
+
+    public ActionPlayer(
+        GameObject owner)
+    {
+        _owner =
+            owner;
+    }
 
 
     // =========================================================
@@ -204,28 +207,28 @@ public class ActionPlayer : MonoBehaviour
     // 角色
     // =========================================================
 
-    private GameObject MasterObject
-    {
-        get
-        {
-            return master != null
-                ? master
-                : gameObject;
-        }
-    }
+    private GameObject MasterObject =>
+        _owner;
 
 
     // =========================================================
-    // Unity
+    // 生命周期（由持有者驱动）
     // =========================================================
 
-    private void Awake()
+    /// <summary>
+    /// 立即创建 PlayableGraph（也可在首次 Play / CrossFade 时惰性创建）。
+    /// </summary>
+    public void Initialize()
     {
         EnsureGraph();
     }
 
 
-    private void OnDestroy()
+    /// <summary>
+    /// 释放 PlayableGraph 并销毁池中实例。
+    /// 由持有者（ActionController）在销毁时调用。
+    /// </summary>
+    public void Dispose()
     {
         ShutdownGraph();
 
@@ -233,43 +236,9 @@ public class ActionPlayer : MonoBehaviour
     }
 
 
-    private void Update()
-    {
-        Tick(
-            Time.deltaTime);
-    }
-
-
     // =========================================================
     // 播放接口
     // =========================================================
-
-    /// <summary>
-    /// 按名称从动作列表中查找 ActionData。
-    /// </summary>
-    public ActionData GetAction(
-        string actionName)
-    {
-        if (string.IsNullOrEmpty(
-                actionName))
-        {
-            return null;
-        }
-
-        foreach (
-            ActionData action
-            in Actions)
-        {
-            if (action != null &&
-                action.name == actionName)
-            {
-                return action;
-            }
-        }
-
-        return null;
-    }
-
 
     /// <summary>
     /// 立即播放指定动作。
@@ -355,31 +324,6 @@ public class ActionPlayer : MonoBehaviour
 
         ActionStarted?.Invoke(
             action);
-    }
-
-
-    /// <summary>
-    /// 按名称查找并播放动作。
-    /// </summary>
-    public void Play(
-        string actionName,
-        bool loop = false)
-    {
-        ActionData action =
-            GetAction(
-                actionName);
-
-        if (action == null)
-        {
-            Debug.LogWarning(
-                $"[ActionPlayer] 播放失败：找不到名为 \"{actionName}\" 的 ActionData。");
-
-            return;
-        }
-
-        Play(
-            action,
-            loop);
     }
 
 
@@ -636,33 +580,6 @@ public class ActionPlayer : MonoBehaviour
 
 
     /// <summary>
-    /// 按名称查找并淡入播放动作（按秒）。
-    /// </summary>
-    public void CrossFade(
-        string actionName,
-        float fadeDuration = -1f,
-        bool loop = false)
-    {
-        ActionData action =
-            GetAction(
-                actionName);
-
-        if (action == null)
-        {
-            Debug.LogWarning(
-                $"[ActionPlayer] 淡入失败：找不到名为 \"{actionName}\" 的 ActionData。");
-
-            return;
-        }
-
-        CrossFadeInFixedTime(
-            action,
-            fadeDuration,
-            loop);
-    }
-
-
-    /// <summary>
     /// 停止播放并清理所有运行时状态。
     /// </summary>
     public void Stop()
@@ -750,7 +667,7 @@ public class ActionPlayer : MonoBehaviour
     // 播放更新
     // =========================================================
 
-    private void Tick(
+    public void Tick(
         float deltaTime)
     {
         if (_active == null)
@@ -1888,7 +1805,7 @@ public class ActionPlayer : MonoBehaviour
             }
         }
 
-        return Instantiate(
+        return Object.Instantiate(
             prefab);
     }
 
@@ -1908,7 +1825,7 @@ public class ActionPlayer : MonoBehaviour
         if (prefab == null)
         {
             // 无法按预制体入池时直接销毁。
-            Destroy(
+            Object.Destroy(
                 instance);
 
             return;
@@ -1958,7 +1875,7 @@ public class ActionPlayer : MonoBehaviour
             {
                 if (instance != null)
                 {
-                    Destroy(
+                    Object.Destroy(
                         instance);
                 }
             }
@@ -2068,7 +1985,8 @@ public class ActionPlayer : MonoBehaviour
         {
             pointEvent
                 .PointEvent
-                .OnCall();
+                .OnCall(
+                    MasterObject);
         }
     }
 

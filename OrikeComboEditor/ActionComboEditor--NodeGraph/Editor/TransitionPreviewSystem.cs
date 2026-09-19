@@ -28,13 +28,27 @@ namespace Orike.ActionGraph
         {
             None,
 
-            Single,
-
             LeadIn,
 
             Fade,
 
             Hold,
+
+            /// <summary>
+            /// 完整播放模式：来源动作从 0 播到结束，
+            /// 然后过渡到目标动作，目标动作从起点播到结束。
+            /// </summary>
+            FullPlay,
+
+            /// <summary>
+            /// 完整播放模式中的过渡阶段。
+            /// </summary>
+            FullFade,
+
+            /// <summary>
+            /// 完整播放模式中目标动作的剩余播放阶段。
+            /// </summary>
+            FullTail,
         }
 
 
@@ -141,27 +155,50 @@ namespace Orike.ActionGraph
 
 
         // =========================================================
-        // 单动作预览
+        // 过渡预览
         // =========================================================
 
-        public void StartSingle(
+        /// <summary>
+        /// 完整播放预览：来源动作从 0 播完，
+        /// 然后按 Transition 参数过渡到目标动作，
+        /// 目标动作从起点播到结束，然后循环。
+        /// </summary>
+        public void StartFullPlay(
             GameObject character,
-            ActionData data)
+            ActionData from,
+            ActionData to,
+            TransitionData transition)
         {
-            if (character == null ||
-                data == null)
+            if (character == null)
             {
+                Debug.LogWarning(
+                    "[TransitionPreview] 未指定预览角色。");
+
                 return;
             }
 
-            AnimationClip clip =
-                ActionDataUtility.GetFirstAnimationClip(
-                    data);
-
-            if (clip == null)
+            if (from == null ||
+                to == null)
             {
                 Debug.LogWarning(
-                    "[TransitionPreview] ActionData 中没有动画 Clip，无法预览。");
+                    "[TransitionPreview] From / To 的 ActionData 为空，无法预览。");
+
+                return;
+            }
+
+            AnimationClip clip0 =
+                ActionDataUtility.GetFirstAnimationClip(
+                    from);
+
+            AnimationClip clip1 =
+                ActionDataUtility.GetFirstAnimationClip(
+                    to);
+
+            if (clip0 == null ||
+                clip1 == null)
+            {
+                Debug.LogWarning(
+                    "[TransitionPreview] From / To 的 ActionData 缺少动画 Clip，无法预览。");
 
                 return;
             }
@@ -173,23 +210,35 @@ namespace Orike.ActionGraph
 
             ResetPlayables();
 
+            _sourceCharacter =
+                character;
+
             _from =
-                data;
+                from;
 
             _to =
-                null;
+                to;
 
             _transition =
-                null;
+                transition;
 
             _fromLoop =
-                true;
+                transition == null ||
+                transition.From == null ||
+                transition.From.Loop;
 
             _p0 =
                 CreatePausedClipPlayable(
-                    clip);
+                    clip0);
+
+            _p1 =
+                CreatePausedClipPlayable(
+                    clip1);
 
             _hasP0 =
+                true;
+
+            _hasP1 =
                 true;
 
             _graph.Connect(
@@ -198,6 +247,16 @@ namespace Orike.ActionGraph
                 _mixer,
                 0);
 
+            _graph.Connect(
+                _p1,
+                0,
+                _mixer,
+                1);
+
+            // 目标动作先定位到配置的起始点
+            _p1.SetTime(
+                GetStartOffsetSeconds());
+
             SetWeights(
                 1f,
                 0f);
@@ -205,8 +264,14 @@ namespace Orike.ActionGraph
             _time =
                 0f;
 
+            _fadeTime =
+                0f;
+
+            _fadeElapsed =
+                0f;
+
             _phase =
-                Phase.Single;
+                Phase.FullPlay;
 
             EvaluateGraph(
                 0f);
@@ -214,10 +279,6 @@ namespace Orike.ActionGraph
             FocusSceneView();
         }
 
-
-        // =========================================================
-        // 过渡预览
-        // =========================================================
 
         public void StartTransition(
             GameObject character,
@@ -311,11 +372,16 @@ namespace Orike.ActionGraph
                 _mixer,
                 1);
 
-            // 目标动作先定位到配置的起始点（归一化 / 秒均换算为秒）
+            // 过渡预览：从触发点开始，直接进入 Fade
+            float triggerSeconds =
+                GetTriggerSeconds();
+
+            _p0.SetTime(
+                triggerSeconds);
+
             _p1.SetTime(
                 GetStartOffsetSeconds());
 
-            // 过渡从配置的“自身起始进度”直接开始
             float fadeDuration =
                 GetFadeDuration();
 
@@ -334,13 +400,13 @@ namespace Orike.ActionGraph
                 transitionTime);
 
             _time =
-                0f;
+                triggerSeconds;
 
             _holdTime =
                 0f;
 
             _phase =
-                Phase.LeadIn;
+                Phase.Fade;
 
             EvaluateGraph(
                 0f);
@@ -396,13 +462,6 @@ namespace Orike.ActionGraph
 
             switch (_phase)
             {
-                case Phase.Single:
-
-                    TickSingle(
-                        deltaTime);
-
-                    break;
-
                 case Phase.LeadIn:
 
                     TickLeadIn(
@@ -423,41 +482,31 @@ namespace Orike.ActionGraph
                         deltaTime);
 
                     break;
+
+                case Phase.FullPlay:
+
+                    TickFullPlay(
+                        deltaTime);
+
+                    break;
+
+                case Phase.FullFade:
+
+                    TickFullFade(
+                        deltaTime);
+
+                    break;
+
+                case Phase.FullTail:
+
+                    TickFullTail(
+                        deltaTime);
+
+                    break;
             }
 
             EvaluateGraph(
                 deltaTime);
-        }
-
-
-        private void TickSingle(
-            float deltaTime)
-        {
-            if (!_hasP0)
-            {
-                return;
-            }
-
-            _time +=
-                deltaTime;
-
-            AnimationClip clip =
-                _p0.GetAnimationClip();
-
-            float length =
-                clip.length;
-
-            if (length > 0f)
-            {
-                _p0.SetTime(
-                    Mathf.Repeat(
-                        _time,
-                        length));
-            }
-
-            SetWeights(
-                1f,
-                0f);
         }
 
 
@@ -552,6 +601,211 @@ namespace Orike.ActionGraph
 
 
         // =========================================================
+        // 完整播放（FullPlay）阶段
+        // =========================================================
+
+        /// <summary>
+        /// 阶段 1：来源动作从 0 播到结束（或触发点）。
+        /// 到达过渡触发点时切换到 FullFade。
+        /// </summary>
+        private void TickFullPlay(
+            float deltaTime)
+        {
+            _time +=
+                deltaTime;
+
+            if (_hasP0)
+            {
+                float length =
+                    _p0.GetAnimationClip().length;
+
+                if (length > 0f)
+                {
+                    float t =
+                        _fromLoop
+                            ? Mathf.Repeat(
+                                _time,
+                                length)
+                            : Mathf.Clamp(
+                                _time,
+                                0f,
+                                length);
+
+                    _p0.SetTime(
+                        t);
+                }
+            }
+
+            SetWeights(
+                1f,
+                0f);
+
+            float threshold =
+                GetFullPlayThreshold();
+
+            if (_time >= threshold)
+            {
+                _fadeTime =
+                    GetTransitionTime() *
+                    GetFadeDuration();
+
+                _fadeElapsed =
+                    0f;
+
+                _p1.SetTime(
+                    GetStartOffsetSeconds());
+
+                _phase =
+                    Phase.FullFade;
+            }
+        }
+
+
+        /// <summary>
+        /// 阶段 2：按 Transition 参数混合。
+        /// 权重到达 1 时切换到 FullTail。
+        /// </summary>
+        private void TickFullFade(
+            float deltaTime)
+        {
+            _fadeTime +=
+                deltaTime;
+
+            _fadeElapsed +=
+                deltaTime;
+
+            _time +=
+                deltaTime;
+
+            float weightIn =
+                Mathf.Max(
+                    GetTransitionTime(),
+                    Mathf.Clamp01(
+                        _fadeTime /
+                        GetFadeDuration()));
+
+            ApplyNormalizedWeights(
+                1f - weightIn,
+                weightIn);
+
+            if (_hasP0)
+            {
+                float length =
+                    _p0.GetAnimationClip().length;
+
+                if (length > 0f)
+                {
+                    float t =
+                        _fromLoop
+                            ? Mathf.Repeat(
+                                _time,
+                                length)
+                            : Mathf.Clamp(
+                                _time,
+                                0f,
+                                length);
+
+                    _p0.SetTime(
+                        t);
+                }
+            }
+
+            if (_hasP1)
+            {
+                float start =
+                    GetStartOffsetSeconds();
+
+                float t =
+                    start +
+                    _fadeElapsed;
+
+                float length =
+                    _p1.GetAnimationClip().length;
+
+                if (length > 0f)
+                {
+                    t =
+                        Mathf.Min(
+                            t,
+                            length);
+                }
+
+                _p1.SetTime(
+                    t);
+            }
+
+            if (weightIn >= 1f)
+            {
+                _phase =
+                    Phase.FullTail;
+            }
+        }
+
+
+        /// <summary>
+        /// 阶段 3：目标动作继续播放到结束，然后循环。
+        /// </summary>
+        private void TickFullTail(
+            float deltaTime)
+        {
+            SetWeights(
+                0f,
+                1f);
+
+            if (_hasP1)
+            {
+                float start =
+                    GetStartOffsetSeconds();
+
+                _fadeElapsed +=
+                    deltaTime;
+
+                float t =
+                    start +
+                    _fadeElapsed;
+
+                float length =
+                    _p1.GetAnimationClip().length;
+
+                if (length > 0f)
+                {
+                    t =
+                        Mathf.Min(
+                            t,
+                            length);
+
+                    _p1.SetTime(
+                        t);
+
+                    if (t >= length)
+                    {
+                        StartFullPlay(
+                            _sourceCharacter,
+                            _from,
+                            _to,
+                            _transition);
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// 完整播放模式的过渡触发点（秒）。
+        /// 直接使用 TriggerTime × 来源 Clip 长度。
+        /// </summary>
+        private float GetFullPlayThreshold()
+        {
+            if (!_hasP0)
+            {
+                return DefaultLeadInDuration;
+            }
+
+            return GetTriggerSeconds();
+        }
+
+
+        // =========================================================
         // 动画时间（暂停的 Playable，手动 SetTime 精确定位）
         // =========================================================
 
@@ -572,7 +826,7 @@ namespace Orike.ActionGraph
 
             float time =
                 _phase == Phase.Fade
-                    ? GetLeadInThreshold() + _fadeElapsed
+                    ? GetTriggerSeconds() + _fadeElapsed
                     : _time;
 
             // 来源动作循环时循环取帧；
@@ -670,7 +924,7 @@ namespace Orike.ActionGraph
                 _transition != null
                     ? Mathf.Clamp01(
                         _transition.TransitionDuration)
-                    : 0.25f;
+                    : 0.1f;
 
             float length =
                 _hasP0
@@ -761,6 +1015,35 @@ namespace Orike.ActionGraph
                 threshold,
                 0f,
                 sourceLength);
+        }
+
+
+        /// <summary>
+        /// 过渡触发点（秒，相对来源动作）。
+        /// TriggerTime × 来源 Clip 长度。
+        /// </summary>
+        private float GetTriggerSeconds()
+        {
+            if (!_hasP0)
+            {
+                return 0f;
+            }
+
+            float length =
+                _p0.GetAnimationClip().length;
+
+            if (length <= 0f)
+            {
+                return 0f;
+            }
+
+            float trigger =
+                _transition != null
+                    ? Mathf.Clamp01(
+                        _transition.TriggerTime)
+                    : 1f;
+
+            return trigger * length;
         }
 
 

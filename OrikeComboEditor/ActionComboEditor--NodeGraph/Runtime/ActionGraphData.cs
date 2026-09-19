@@ -28,6 +28,48 @@ namespace Orike.ActionGraph
         public List<TransitionData> Transitions =
             new List<TransitionData>();
 
+        /// <summary>
+        /// 入口动作：图启动时第一个播放的动作。
+        /// 由编辑器中的“入口”节点连线配置。
+        /// </summary>
+        [SerializeField]
+        private Action entryAction;
+
+        public Action EntryAction
+        {
+            get => entryAction;
+            set => entryAction = value;
+        }
+
+
+        /// <summary>
+        /// 入口节点是否已保存过位置。
+        /// </summary>
+        [SerializeField]
+        private bool hasEntryNodePosition;
+
+        /// <summary>
+        /// 入口节点在 Graph 窗口中的位置（编辑器布局数据）。
+        /// </summary>
+        [SerializeField]
+        private Vector2 entryNodePosition;
+
+        /// <summary>入口节点位置。</summary>
+        public Vector2 EntryNodePosition
+        {
+            get => entryNodePosition;
+            set
+            {
+                entryNodePosition = value;
+
+                hasEntryNodePosition = true;
+            }
+        }
+
+        /// <summary>入口节点是否已保存过位置。</summary>
+        public bool HasEntryNodePosition =>
+            hasEntryNodePosition;
+
 
         // =========================================================
         // 查询
@@ -163,14 +205,18 @@ namespace Orike.ActionGraph
             foreach (BeCancelData beCancel in from.BeCancels)
             {
                 if (beCancel == null ||
-                    string.IsNullOrEmpty(beCancel.Tag))
+                    !beCancel.HasAnyTag())
                 {
                     continue;
                 }
 
-                if (to.HasCancelTag(beCancel.Tag))
+                foreach (string tag in beCancel.Tags)
                 {
-                    return true;
+                    if (!string.IsNullOrEmpty(tag) &&
+                        to.HasCancelTag(tag))
+                    {
+                        return true;
+                    }
                 }
             }
 
@@ -189,7 +235,8 @@ namespace Orike.ActionGraph
         ///   From 的 BeCancels 与 To 的 Cancels 必须存在相同 Tag，
         ///   才允许创建连线。Tag 由用户在 Inspector 中手动配置。
         ///
-        /// 已存在相同连线时直接返回原 Transition。
+        /// 允许同一对 Action 之间创建多条连线
+        /// （对应不同 Tag 或同一 Tag 的多个过渡配置）。
         /// 没有匹配 Tag 时返回 null。
         /// </summary>
         public TransitionData Connect(
@@ -202,15 +249,6 @@ namespace Orike.ActionGraph
             {
                 return null;
             }
-
-            TransitionData existing =
-                GetTransition(from, to);
-
-            if (existing != null)
-            {
-                return existing;
-            }
-
 
             // 校验：必须存在匹配的 Tag
             if (FindMatchingTag(from, to) == null)
@@ -285,14 +323,18 @@ namespace Orike.ActionGraph
             foreach (BeCancelData beCancel in from.BeCancels)
             {
                 if (beCancel == null ||
-                    string.IsNullOrEmpty(beCancel.Tag))
+                    !beCancel.HasAnyTag())
                 {
                     continue;
                 }
 
-                if (to.HasCancelTag(beCancel.Tag))
+                foreach (string tag in beCancel.Tags)
                 {
-                    return beCancel.Tag;
+                    if (!string.IsNullOrEmpty(tag) &&
+                        to.HasCancelTag(tag))
+                    {
+                        return tag;
+                    }
                 }
             }
 
@@ -454,6 +496,12 @@ namespace Orike.ActionGraph
             }
 
             Actions.Remove(action);
+
+            if (entryAction == action)
+            {
+                entryAction =
+                    null;
+            }
         }
 
 
@@ -482,6 +530,14 @@ namespace Orike.ActionGraph
                     transition == null ||
                     transition.From == null ||
                     transition.To == null);
+
+            // 入口动作已被删除则清空
+            if (entryAction != null &&
+                !Actions.Contains(entryAction))
+            {
+                entryAction =
+                    null;
+            }
         }
     }
 }

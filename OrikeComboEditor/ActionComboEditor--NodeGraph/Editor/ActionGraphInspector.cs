@@ -311,7 +311,7 @@ namespace Orike.ActionGraph
             if (_action.ActionData == null)
             {
                 EditorGUILayout.HelpBox(
-                    "绑定 ActionData 后可预览动画。",
+                    "绑定 ActionData 后可预览完整动作表现（动画 / 音效 / 特效 / 碰撞盒 / 事件），与 TimeLine 预览一致。",
                     MessageType.None);
 
                 return;
@@ -324,7 +324,7 @@ namespace Orike.ActionGraph
             string buttonText =
                 isPreviewing
                     ? "■ 停止动作预览"
-                    : "▶ 预览动作动画";
+                    : "▶ 预览动作";
 
             if (GUILayout.Button(
                     buttonText,
@@ -376,6 +376,9 @@ namespace Orike.ActionGraph
 
             SerializedProperty transitionTimeProperty =
                 transitionProperty.FindPropertyRelative("TransitionTime");
+
+            SerializedProperty triggerTimeProperty =
+                transitionProperty.FindPropertyRelative("TriggerTime");
 
             SerializedProperty priorityProperty =
                 transitionProperty.FindPropertyRelative("Priority");
@@ -491,6 +494,17 @@ namespace Orike.ActionGraph
                     0f,
                     1f);
 
+            triggerTimeProperty.floatValue =
+                EditorGUILayout.Slider(
+                    new GUIContent(
+                        "过渡触发点",
+                        "来源动作播放到该进度时开始过渡（0~1，相对来源动作总时长）\n" +
+                        "1（默认）= 来源播完时触发；0.5 = 播到一半即开始过渡。\n" +
+                        "Auto 连线运行时也使用此值；过渡预览从该点开始播放。"),
+                    triggerTimeProperty.floatValue,
+                    0f,
+                    1f);
+
             bool slidersChanged =
                 EditorGUI.EndChangeCheck();
 
@@ -557,25 +571,43 @@ namespace Orike.ActionGraph
                 return;
             }
 
-            bool isPreviewing =
+            bool isPreviewingTransition =
                 _window.IsPreviewingTransition(
                     _transition);
 
-            string buttonText =
-                isPreviewing
+            string transitionButtonText =
+                isPreviewingTransition
                     ? "■ 停止预览"
-                    : "▶ 重新播放过渡";
+                    : "▶ 播放过渡";
 
             if (GUILayout.Button(
-                    buttonText,
+                    transitionButtonText,
                     GUILayout.Height(26)))
             {
                 _window.TogglePreviewTransition(
                     _transition);
             }
 
+            // 完整播放预览按钮（独立切换）
+            bool isPreviewingFullPlay =
+                _window.IsPreviewingFullPlay(
+                    _transition);
+
+            string fullPlayButtonText =
+                isPreviewingFullPlay
+                    ? "■ 停止完整预览"
+                    : "▶▶ 完整播放预览";
+
+            if (GUILayout.Button(
+                    fullPlayButtonText,
+                    GUILayout.Height(26)))
+            {
+                _window.ToggleFullPlayPreview(
+                    _transition);
+            }
+
             EditorGUILayout.HelpBox(
-                "点击连线即自动预览；预览中拖动上方滑杆混合效果实时刷新，取消选中连线即停止。",
+                "点击连线即自动预览过渡段；完整播放预览从来源动作开头到目标动作结尾；两个按钮独立切换。预览中拖动上方滑杆实时刷新。",
                 MessageType.None);
         }
     }

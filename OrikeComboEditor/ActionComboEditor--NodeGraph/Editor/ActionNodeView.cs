@@ -28,6 +28,12 @@ namespace Orike.ActionGraph
         private const string UssClassNode =
             "action-node";
 
+        /// <summary>
+        /// 运行时当前动作高亮样式类（由 USS 提供边框高亮）。
+        /// </summary>
+        public const string UssClassActive =
+            "action-node--active";
+
 
         private readonly ActionGraphView _view;
 
@@ -344,6 +350,25 @@ namespace Orike.ActionGraph
         }
 
 
+        /// <summary>
+        /// 标记节点为“运行时当前动作”，切换高亮样式。
+        /// </summary>
+        public void SetActive(
+            bool active)
+        {
+            if (active)
+            {
+                AddToClassList(
+                    UssClassActive);
+            }
+            else
+            {
+                RemoveFromClassList(
+                    UssClassActive);
+            }
+        }
+
+
         private string GetDisplayTitle()
         {
             if (Action == null ||
@@ -465,12 +490,12 @@ namespace Orike.ActionGraph
                     Port port =
                         CreateTagPort(
                             Direction.Output,
-                            beCancel.Tag,
+                            beCancel.TagsString,
                             beCancel,
-                            newTag =>
+                            newTags =>
                                 OnBeCancelTagChanged(
                                     beCancel,
-                                    newTag),
+                                    newTags),
                             () =>
                                 RemoveBeCancel(
                                     beCancel));
@@ -579,7 +604,7 @@ namespace Orike.ActionGraph
             foreach (KeyValuePair<BeCancelData, Port> kv in _outputPorts)
             {
                 if (kv.Key != null &&
-                    kv.Key.Tag == tag)
+                    kv.Key.HasTag(tag))
                 {
                     return kv.Value;
                 }
@@ -698,17 +723,11 @@ namespace Orike.ActionGraph
                 Action,
                 "Add BeCancel");
 
-            float duration =
-                ActionDataUtility.GetDuration(
-                    Action.ActionData);
-
             Action.BeCancels.Add(
                 new BeCancelData(
                     "",
                     0f,
-                    duration > 0f
-                        ? duration
-                        : 1f));
+                    1f));
 
             EditorUtility.SetDirty(
                 Action);
@@ -840,20 +859,20 @@ namespace Orike.ActionGraph
 
         private void OnBeCancelTagChanged(
             BeCancelData beCancel,
-            string newTag)
+            string newTags)
         {
             if (beCancel == null ||
-                beCancel.Tag == newTag)
+                beCancel.TagsString == newTags)
             {
                 return;
             }
 
             Undo.RecordObject(
                 Action,
-                "Edit BeCancel Tag");
+                "Edit BeCancel Tags");
 
-            beCancel.Tag =
-                newTag;
+            beCancel.SetTagsFromString(
+                newTags);
 
             EditorUtility.SetDirty(
                 Action);
@@ -979,6 +998,81 @@ namespace Orike.ActionGraph
 
 
             return port;
+        }
+    }
+
+
+    /// <summary>
+    /// 图中的“入口”节点。
+    /// 输出端口表示“从这里开始播放”，连接到某个 Action 的“自动转入”端口后，
+    /// 即把该 Action 设为图中的入口动作（启动时第一个播放）。
+    /// </summary>
+    public class EntryNodeView : Node
+    {
+        public const string UssClass =
+            "entry-node";
+
+        private readonly ActionGraphData _graph;
+
+        public Port OutputPort
+        {
+            get;
+            private set;
+        }
+
+        public EntryNodeView(
+            ActionGraphData graph)
+        {
+            _graph =
+                graph;
+
+            AddToClassList(
+                UssClass);
+
+            capabilities =
+                Capabilities.Movable |
+                Capabilities.Selectable;
+
+            title =
+                "入口";
+
+            OutputPort =
+                Port.Create<Edge>(
+                    Orientation.Horizontal,
+                    Direction.Output,
+                    Port.Capacity.Single,
+                    typeof(Action));
+
+            OutputPort.portName =
+                "Start";
+
+            outputContainer.Add(
+                OutputPort);
+
+            RefreshExpandedState();
+        }
+
+
+        /// <summary>
+        /// 拖拽移动时把入口节点位置回写到数据，避免重新打开后重置。
+        /// </summary>
+        public override void SetPosition(
+            Rect newPos)
+        {
+            base.SetPosition(
+                newPos);
+
+            if (_graph == null ||
+                _graph.EntryNodePosition == newPos.position)
+            {
+                return;
+            }
+
+            _graph.EntryNodePosition =
+                newPos.position;
+
+            EditorUtility.SetDirty(
+                _graph);
         }
     }
 

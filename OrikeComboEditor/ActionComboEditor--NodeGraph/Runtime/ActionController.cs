@@ -31,22 +31,14 @@ namespace Orike.ActionGraph
         [SerializeField]
         private ActionGraphData graph;
 
-        [Tooltip("动作播放器；为空时自动取同物体上的 ActionPlayer")]
-        [SerializeField]
+        /// <summary>
+        /// 动作播放器：由本控制器在 Awake 中直接 new 出来，无需挂在角色上。
+        /// </summary>
         private ActionPlayer player;
 
         [Tooltip("搓招输入检测；为空时自动查找场景中的 InputToCommand")]
         [SerializeField]
         private InputToCommand input;
-
-        [Tooltip("动作自然播放结束后回到的默认动作（如 Idle）")]
-        [SerializeField]
-        private Action defaultAction;
-
-        [Tooltip("启动时是否自动播放默认动作")]
-        [SerializeField]
-        private bool playDefaultOnStart =
-            true;
 
         [Tooltip("预约有效时长（秒）：输入提前量的保留时间")]
         [SerializeField]
@@ -62,6 +54,11 @@ namespace Orike.ActionGraph
         [SerializeField]
         private float inputRepeatCooldown =
             0.2f;
+
+        [Tooltip("Debug：仅在当前动作发生切换时输出日志（from -> to），方便调试动作切换")]
+        [SerializeField]
+        private bool logActionChanges =
+            true;
 
 
         // =========================================================
@@ -99,22 +96,13 @@ namespace Orike.ActionGraph
             set => graph = value;
         }
 
-        public ActionPlayer Player
-        {
-            get => player;
-            set => player = value;
-        }
+        public ActionPlayer Player =>
+            player;
 
         public InputToCommand Input
         {
             get => input;
             set => input = value;
-        }
-
-        public Action DefaultAction
-        {
-            get => defaultAction;
-            set => defaultAction = value;
         }
 
         /// <summary>
@@ -144,11 +132,11 @@ namespace Orike.ActionGraph
 
         private void Awake()
         {
-            if (player == null)
-            {
-                player =
-                    GetComponent<ActionPlayer>();
-            }
+            player =
+                new ActionPlayer(
+                    gameObject);
+
+            player.Initialize();
 
             if (input == null)
             {
@@ -163,12 +151,13 @@ namespace Orike.ActionGraph
             if (graph != null)
             {
                 graph.RefreshData();
-            }
 
-            if (playDefaultOnStart &&
-                defaultAction != null)
-            {
-                PlayImmediate(defaultAction);
+                if (graph.EntryAction != null &&
+                    graph.EntryAction.ActionData != null)
+                {
+                    PlayImmediate(
+                        graph.EntryAction);
+                }
             }
         }
 
@@ -196,6 +185,18 @@ namespace Orike.ActionGraph
         private void Update()
         {
             Tick();
+
+            player?.Tick(
+                Time.deltaTime);
+        }
+
+
+        private void OnDestroy()
+        {
+            player?.Dispose();
+
+            player =
+                null;
         }
 
 
@@ -235,13 +236,14 @@ namespace Orike.ActionGraph
         // =========================================================
 
         /// <summary>
-        /// 遍历图中全部 Action，
-        /// 只要任意一个 KeyCommand 在本帧搓招成功，就预约该 Action。
+        /// 维护预约列表：
+        ///   - 无按键需求（KeyCommands 为空）的 Action 直接加入预约，
+        ///     作为 beCancel 窗口内的“自动转入”候选，无需输入即可触发；
+        ///   - 有 KeyCommands 的 Action 则在本帧搓招成功时预约。
         /// </summary>
         public void ScanInput()
         {
-            if (input == null ||
-                graph == null)
+            if (graph == null)
             {
                 return;
             }
@@ -249,14 +251,23 @@ namespace Orike.ActionGraph
             foreach (Action action in graph.Actions)
             {
                 if (action == null ||
-                    action == _current ||
-                    action.KeyCommands == null ||
-                    action.KeyCommands.Count == 0)
+                    action == _current)
                 {
                     continue;
                 }
 
-                if (IsInRepeatCooldown(action))
+                // 无按键需求：直接加入预约列表，
+                // 由 CanExecuteNow 中的 beCancel 窗口判定是否可执行
+                if (action.KeyCommands == null ||
+                    action.KeyCommands.Count == 0)
+                {
+                    Reserve(action);
+
+                    continue;
+                }
+
+                if (input == null ||
+                    IsInRepeatCooldown(action))
                 {
                     continue;
                 }
@@ -272,9 +283,10 @@ namespace Orike.ActionGraph
 
                     if (input.occurCommand(command))
                     {
-                        Reserve(action);
+                        Reserve(action, command.cancelTag);
 
-                        break;
+                        // 不 break：允许多个 KeyCommand 在同一帧各自预约，
+                        // 每条对应不同的 cancelTag（如“无按键”与“rt松开”）。
                     }
                 }
             }
@@ -308,11 +320,23 @@ namespace Orike.ActionGraph
         // =========================================================
 
         /// <summary>
-        /// 预约一个目标动作（外部代码 / 输入扫描均可调用）。
-        /// 已存在相同目标的预约时不重复添加。
+        /// 预约一个目标动作（外部代码 / 输入扫描均可调用），作用于所有 Cancel。
+        /// 已存在相同目标且相同取消 Tag 的预约时不重复添加。
         /// </summary>
         public ReservationAction Reserve(
             Action target)
+        {
+            return Reserve(target, null);
+        }
+
+
+        /// <summary>
+        /// 预约一个目标动作，并记录触发它的取消 Tag。
+        /// cancelTag 为空表示作用于所有 Cancel。
+        /// </summary>
+        public ReservationAction Reserve(
+            Action target,
+            string cancelTag)
         {
             if (target == null ||
                 graph == null)
@@ -320,10 +344,16 @@ namespace Orike.ActionGraph
                 return null;
             }
 
+            string normalizedTag =
+                string.IsNullOrEmpty(cancelTag)
+                    ? null
+                    : cancelTag;
+
             foreach (ReservationAction existing in _reservations)
             {
                 if (existing != null &&
-                    existing.Target == target)
+                    existing.Target == target &&
+                    existing.CancelTag == normalizedTag)
                 {
                     return existing;
                 }
@@ -339,7 +369,8 @@ namespace Orike.ActionGraph
                     target,
                     transition,
                     Time.time,
-                    reservationDuration);
+                    reservationDuration,
+                    normalizedTag);
 
             _reservations.Add(reservation);
 
@@ -408,26 +439,73 @@ namespace Orike.ActionGraph
             float actionTime =
                 CurrentActionTime;
 
+            // BeCancel 窗口使用归一化时间（0~1），
+            // 需要把秒转为归一化
+            float totalDuration =
+                ActionDataUtility.GetDuration(
+                    _current.ActionData);
+
+            float normalizedTime =
+                totalDuration > 0f
+                    ? Mathf.Clamp01(
+                        actionTime / totalDuration)
+                    : 0f;
+
             foreach (BeCancelData beCancel in _current.BeCancels)
             {
                 if (beCancel == null ||
-                    string.IsNullOrEmpty(beCancel.Tag))
+                    !beCancel.HasAnyTag())
                 {
                     continue;
                 }
 
-                if (!target.HasCancelTag(beCancel.Tag))
+                // 目标动作只需匹配 BeCancel 窗口的任意一个 Tag
+                bool matched =
+                    false;
+
+                foreach (string tag in beCancel.Tags)
+                {
+                    if (!string.IsNullOrEmpty(tag) &&
+                        target.HasCancelTag(tag) &&
+                        CommandMatchesCancel(reservation, tag))
+                    {
+                        matched =
+                            true;
+
+                        break;
+                    }
+                }
+
+                if (!matched)
                 {
                     continue;
                 }
 
-                if (beCancel.ContainsTime(actionTime))
+                if (beCancel.ContainsTime(normalizedTime))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+
+        /// <summary>
+        /// 判断预约绑定的取消 Tag 是否允许匹配给定 Tag。
+        /// 预约未指定 Tag（null/空）时作用于所有 Cancel。
+        /// </summary>
+        private bool CommandMatchesCancel(
+            ReservationAction reservation,
+            string tag)
+        {
+            if (string.IsNullOrEmpty(
+                    reservation.CancelTag))
+            {
+                return true;
+            }
+
+            return reservation.CancelTag == tag;
         }
 
 
@@ -685,9 +763,29 @@ namespace Orike.ActionGraph
             _current =
                 target;
 
+            if (logActionChanges)
+            {
+                Debug.Log(
+                    $"[ActionSwitch] {GetActionName(from)} -> {GetActionName(target)}  (t={Time.time:F2}s)",
+                    this);
+            }
+
             ActionChanged?.Invoke(
                 from,
                 target);
+        }
+
+
+        /// <summary>
+        /// 日志中显示的动作名；空动作用 &lt;null&gt; 表示
+        /// （入口动作首次播放时 from 为空）。
+        /// </summary>
+        private static string GetActionName(
+            Action action)
+        {
+            return action != null
+                ? action.Id
+                : "<null>";
         }
 
 
@@ -716,12 +814,6 @@ namespace Orike.ActionGraph
                     transition);
 
                 return;
-            }
-
-            if (defaultAction != null &&
-                defaultAction != _current)
-            {
-                PlayImmediate(defaultAction);
             }
         }
 

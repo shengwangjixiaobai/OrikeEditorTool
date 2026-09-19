@@ -23,8 +23,17 @@ public class VoiceClipData : BaseClipData
             return;
         }
 
-        Length = Voice.length;
-        EndTime = StartTime + Length;
+        // 仅在 Length 尚未初始化时用音频全长为默认值；
+        // 已被裁剪过后要保留用户设置的 Length，避免刷新/加载时丢失裁剪。
+        if (Length <= 0f)
+        {
+            Length =
+                Voice.length;
+        }
+
+        EndTime =
+            StartTime +
+            Length;
     }
 
     public override BasePreviewData

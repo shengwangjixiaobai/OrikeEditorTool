@@ -1,0 +1,11 @@
+/* HTN 编辑器（HTNDomainEditorWindow）样式表。 */
+
+/* 左右分栏分隔条（竖条）：鼠标变为水平双向箭头，左右拖拽调整面板宽度 */
+.htn-splitter--left-right {
+    cursor: resize-horizontal;
+}
+
+/* 上下分栏分隔条（横条）：鼠标变为垂直双向箭头，上下拖拽调整面板高度 */
+.htn-splitter--top-bottom {
+    cursor: resize-vertical;
+}

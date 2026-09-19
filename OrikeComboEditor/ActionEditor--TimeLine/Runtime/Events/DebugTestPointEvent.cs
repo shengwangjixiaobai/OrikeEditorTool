@@ -14,7 +14,8 @@ public class DebugTestPointEvent
     private string _message = "Debug Point Event";
 
 
-    public void OnCall()
+    public void OnCall(
+        GameObject owner)
     {
         Debug.Log(
             $"[PointEvent] OnCall: {_message}");
